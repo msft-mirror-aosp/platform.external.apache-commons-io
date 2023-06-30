@@ -21,12 +21,17 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.commons.io.build.AbstractStreamBuilder;
+
 /**
  * An unsynchronized version of {@link FilterInputStream}, not thread-safe.
  * <p>
  * Wraps an existing {@link InputStream} and performs some transformation on the input data while it is being read. Transformations can be anything from a
  * simple byte-wise filtering input data to an on-the-fly compression or decompression of the underlying stream. Input streams that wrap another input stream
  * and provide some additional functionality on top of it usually inherit from this class.
+ * </p>
+ * <p>
+ * To build an instance, see {@link Builder}.
  * </p>
  * <p>
  * Provenance: Apache Harmony and modified.
@@ -39,17 +44,69 @@ import java.io.InputStream;
 public class UnsynchronizedFilterInputStream extends InputStream {
 
     /**
+     * Builds a new {@link UnsynchronizedFilterInputStream} instance.
+     * <p>
+     * Using File IO:
+     * </p>
+     * <pre>{@code
+     * UnsynchronizedFilterInputStream s = UnsynchronizedFilterInputStream.builder()
+     *   .setFile(file)
+     *   .get();}
+     * </pre>
+     * <p>
+     * Using NIO Path:
+     * </p>
+     * <pre>{@code
+     * UnsynchronizedFilterInputStream s = UnsynchronizedFilterInputStream.builder()
+     *   .setPath(path)
+     *   .get();}
+     * </pre>
+     */
+    public static class Builder extends AbstractStreamBuilder<UnsynchronizedFilterInputStream, Builder> {
+
+        /**
+         * Constructs a new instance.
+         * <p>
+         * This builder use the aspect InputStream and OpenOption[].
+         * </p>
+         * <p>
+         * You must provide an origin that can be converted to an InputStream by this builder, otherwise, this call will throw an
+         * {@link UnsupportedOperationException}.
+         * </p>
+         *
+         * @return a new instance.
+         * @throws UnsupportedOperationException if the origin cannot provide an InputStream.
+         * @see #getInputStream()
+         */
+        @SuppressWarnings("resource") // Caller closes.
+        @Override
+        public UnsynchronizedFilterInputStream get() throws IOException {
+            return new UnsynchronizedFilterInputStream(getInputStream());
+        }
+
+    }
+
+    /**
+     * Constructs a new {@link Builder}.
+     *
+     * @return a new {@link Builder}.
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
      * The source input stream that is filtered.
      */
-    protected volatile InputStream in;
+    protected volatile InputStream inputStream;
 
     /**
      * Constructs a new {@code FilterInputStream} with the specified input stream as source.
      *
-     * @param in the non-null InputStream to filter reads on.
+     * @param inputStream the non-null InputStream to filter reads on.
      */
-    protected UnsynchronizedFilterInputStream(final InputStream in) {
-        this.in = in;
+    UnsynchronizedFilterInputStream(final InputStream inputStream) {
+        this.inputStream = inputStream;
     }
 
     /**
@@ -60,7 +117,7 @@ public class UnsynchronizedFilterInputStream extends InputStream {
      */
     @Override
     public int available() throws IOException {
-        return in.available();
+        return inputStream.available();
     }
 
     /**
@@ -70,7 +127,7 @@ public class UnsynchronizedFilterInputStream extends InputStream {
      */
     @Override
     public void close() throws IOException {
-        in.close();
+        inputStream.close();
     }
 
     /**
@@ -86,7 +143,7 @@ public class UnsynchronizedFilterInputStream extends InputStream {
     @SuppressWarnings("sync-override") // by design.
     @Override
     public void mark(final int readlimit) {
-        in.mark(readlimit);
+        inputStream.mark(readlimit);
     }
 
     /**
@@ -100,7 +157,7 @@ public class UnsynchronizedFilterInputStream extends InputStream {
      */
     @Override
     public boolean markSupported() {
-        return in.markSupported();
+        return inputStream.markSupported();
     }
 
     /**
@@ -112,7 +169,7 @@ public class UnsynchronizedFilterInputStream extends InputStream {
      */
     @Override
     public int read() throws IOException {
-        return in.read();
+        return inputStream.read();
     }
 
     /**
@@ -141,7 +198,7 @@ public class UnsynchronizedFilterInputStream extends InputStream {
      */
     @Override
     public int read(final byte[] buffer, final int offset, final int count) throws IOException {
-        return in.read(buffer, offset, count);
+        return inputStream.read(buffer, offset, count);
     }
 
     /**
@@ -155,7 +212,7 @@ public class UnsynchronizedFilterInputStream extends InputStream {
     @SuppressWarnings("sync-override") // by design.
     @Override
     public void reset() throws IOException {
-        in.reset();
+        inputStream.reset();
     }
 
     /**
@@ -170,6 +227,6 @@ public class UnsynchronizedFilterInputStream extends InputStream {
      */
     @Override
     public long skip(final long count) throws IOException {
-        return in.skip(count);
+        return inputStream.skip(count);
     }
 }
