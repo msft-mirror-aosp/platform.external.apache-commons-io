@@ -54,10 +54,10 @@ import org.apache.commons.io.function.Uncheck;
  * @see UncheckedIOException
  * @since 2.12.0
  */
-public class FilesUncheck {
+public final class FilesUncheck {
 
     /**
-     * Delegates to {@link Files#copy(InputStream, Path,CopyOption...)} throwing {@link UncheckedIOException} instead of
+     * Delegates to {@link Files#copy(InputStream, Path, CopyOption...)} throwing {@link UncheckedIOException} instead of
      * {@link IOException}.
      *
      * @param in See delegate.
