@@ -435,10 +435,11 @@ public class XmlStreamReaderTest {
     @Test
     @DefaultLocale(language = "tr")
     public void testLowerCaseEncodingWithTurkishLocale_IO_557() throws Exception {
-        final String[] encodings = {"iso8859-1", "us-ascii", "utf-8"};
+        final String[] encodings = { "iso8859-1", "us-ascii", "utf-8" }; // lower-case
         for (final String encoding : encodings) {
             final String xml = getXML("no-bom", XML3, encoding, encoding);
-            try (ByteArrayInputStream is = new ByteArrayInputStream(xml.getBytes(encoding)); XmlStreamReader xmlReader = new XmlStreamReader(is)) {
+            try (ByteArrayInputStream is = new ByteArrayInputStream(xml.getBytes(encoding));
+                    XmlStreamReader xmlReader = new XmlStreamReader(is)) {
                 assertTrue(encoding.equalsIgnoreCase(xmlReader.getEncoding()), "Check encoding : " + encoding);
                 assertEquals(xml, IOUtils.toString(xmlReader), "Check content");
             }
@@ -529,12 +530,9 @@ public class XmlStreamReaderTest {
 
     protected void testRawNoBomInvalid(final String encoding) throws Exception {
         try (final InputStream is = getXmlInputStream("no-bom", XML3, encoding, encoding)) {
-            try {
-                new XmlStreamReader(is, false).close();
-                fail("It should have failed");
-            } catch (final IOException ex) {
-                assertTrue(ex.getMessage().contains("Invalid encoding,"));
-            }
+            final XmlStreamReader xmlStreamReader = new XmlStreamReader(is, false);
+            final IOException ex = assertThrows(IOException.class, xmlStreamReader::close);
+            assertTrue(ex.getMessage().contains("Invalid encoding,"));
         }
     }
 
