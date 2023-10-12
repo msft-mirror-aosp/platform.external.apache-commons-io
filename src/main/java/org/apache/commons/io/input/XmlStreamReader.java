@@ -201,14 +201,23 @@ public class XmlStreamReader extends Reader {
 
     /**
      * Pattern capturing the encoding of the "xml" processing instruction.
+     * <p>
+     * See also the <a href="https://www.w3.org/TR/2008/REC-xml-20081126/#NT-EncName">XML specification</a>.
+     * </p>
      */
-    public static final Pattern ENCODING_PATTERN = Pattern.compile("<\\?xml.*encoding[\\s]*=[\\s]*((?:\".[^\"]*\")|(?:'.[^']*'))", Pattern.MULTILINE);
+    public static final Pattern ENCODING_PATTERN = Pattern.compile(
+    // @formatter:off
+            "^<\\?xml\\s+"
+            + "version\\s*=\\s*(?:(?:\"1\\.[0-9]+\")|(?:'1.[0-9]+'))\\s+"
+            + "encoding\\s*=\\s*((?:\"[A-Za-z]([A-Za-z0-9\\._]|-)*\")|(?:'[A-Za-z]([A-Za-z0-9\\\\._]|-)*'))",
+            Pattern.MULTILINE);
+    // @formatter:on
 
     private static final String RAW_EX_1 = "Illegal encoding, BOM [{0}] XML guess [{1}] XML prolog [{2}] encoding mismatch";
 
     private static final String RAW_EX_2 = "Illegal encoding, BOM [{0}] XML guess [{1}] XML prolog [{2}] unknown BOM";
 
-    private static final String HTTP_EX_1 = "Illegal encoding, CT-MIME [{0}] CT-Enc [{1}] BOM [{2}] XML guess [{3}] XML prolog [{4}], BOM must be NULL";
+    private static final String HTTP_EX_1 = "Illegal encoding, CT-MIME [{0}] CT-Enc [{1}] BOM [{2}] XML guess [{3}] XML prolog [{4}], BOM must be null";
 
     private static final String HTTP_EX_2 = "Illegal encoding, CT-MIME [{0}] CT-Enc [{1}] BOM [{2}] XML guess [{3}] XML prolog [{4}], encoding mismatch";
 
@@ -225,7 +234,7 @@ public class XmlStreamReader extends Reader {
     }
 
     /**
-     * Gets the charset parameter value, NULL if not present, NULL if httpContentType is NULL.
+     * Gets the charset parameter value, {@code null} if not present, {@code null} if httpContentType is {@code null}.
      *
      * @param httpContentType the HTTP content type
      * @return The content type encoding (upcased)
@@ -245,7 +254,7 @@ public class XmlStreamReader extends Reader {
     }
 
     /**
-     * Gets the MIME type or NULL if httpContentType is NULL.
+     * Gets the MIME type or {@code null} if httpContentType is {@code null}.
      *
      * @param httpContentType the HTTP content type
      * @return The mime content type
@@ -265,7 +274,7 @@ public class XmlStreamReader extends Reader {
     }
 
     /**
-     * Gets the encoding declared in the <?xml encoding=...?>, NULL if none.
+     * Gets the encoding declared in the <?xml encoding=...?>, {@code null} if none.
      *
      * @param inputStream InputStream to create the reader from.
      * @param guessedEnc  guessed encoding
@@ -855,7 +864,7 @@ public class XmlStreamReader extends Reader {
     /**
      * Gets the default encoding to use if none is set in HTTP content-type, XML prolog and the rules based on content-type are not adequate.
      * <p>
-     * If it is NULL the content-type based rules are used.
+     * If it is {@code null} the content-type based rules are used.
      * </p>
      *
      * @return the default encoding to use.

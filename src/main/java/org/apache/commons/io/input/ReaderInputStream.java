@@ -148,14 +148,6 @@ public class ReaderInputStream extends InputStream {
 
     }
 
-    private static CharsetEncoder newEncoder(final Charset charset) {
-        // @formatter:off
-        return Charsets.toCharset(charset).newEncoder()
-                .onMalformedInput(CodingErrorAction.REPLACE)
-                .onUnmappableCharacter(CodingErrorAction.REPLACE);
-        // @formatter:on
-    }
-
     /**
      * Constructs a new {@link Builder}.
      *
@@ -177,6 +169,14 @@ public class ReaderInputStream extends InputStream {
 
     static float minBufferSize(final CharsetEncoder charsetEncoder) {
         return charsetEncoder.maxBytesPerChar() * 2;
+    }
+
+    private static CharsetEncoder newEncoder(final Charset charset) {
+        // @formatter:off
+        return Charsets.toCharset(charset).newEncoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        // @formatter:on
     }
 
     private final Reader reader;
@@ -339,6 +339,9 @@ public class ReaderInputStream extends InputStream {
      * @throws IOException If an I/O error occurs
      */
     private void fillBuffer() throws IOException {
+        if (endOfInput) {
+            return;
+        }
         if (!endOfInput && (lastCoderResult == null || lastCoderResult.isUnderflow())) {
             encoderIn.compact();
             final int position = encoderIn.position();
