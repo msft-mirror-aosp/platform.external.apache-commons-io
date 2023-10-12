@@ -26,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -63,7 +64,7 @@ public class UnsynchronizedBufferedInputStreamTest {
     @BeforeEach
     protected void setUp() throws IOException {
         fileName = Files.createTempFile(getClass().getSimpleName(), ".tst");
-        Files.write(fileName, DATA.getBytes("UTF-8"));
+        Files.write(fileName, DATA.getBytes(StandardCharsets.UTF_8));
 
         isFile = Files.newInputStream(fileName);
         is = new BufferedInputStream(isFile);
@@ -87,7 +88,7 @@ public class UnsynchronizedBufferedInputStreamTest {
      */
     @Test
     public void test_available() throws IOException {
-        assertTrue(is.available() == DATA.length(), "Returned incorrect number of available bytes");
+        assertEquals(DATA.length(), is.available(), "Returned incorrect number of available bytes");
 
         // Test that a closed stream throws an IOE for available()
         final BufferedInputStream bis = new BufferedInputStream(new ByteArrayInputStream(new byte[] { 'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd' }));
@@ -271,7 +272,7 @@ public class UnsynchronizedBufferedInputStreamTest {
     public void test_read() throws IOException {
         final InputStreamReader isr = new InputStreamReader(is);
         final int c = isr.read();
-        assertTrue(c == DATA.charAt(0), "read returned incorrect char");
+        assertEquals(DATA.charAt(0), c, "read returned incorrect char");
 
         final byte[] bytes = new byte[256];
         for (int i = 0; i < 256; i++) {
@@ -332,7 +333,7 @@ public class UnsynchronizedBufferedInputStreamTest {
         })) {
             bufin.read();
             final int result = bufin.read(new byte[2], 0, 2);
-            assertTrue(result == 1, () -> "Incorrect result: " + result);
+            assertEquals(1, result, () -> "Incorrect result: " + result);
         }
     }
 
@@ -409,11 +410,11 @@ public class UnsynchronizedBufferedInputStreamTest {
     @Test
     public void test_reset_scenario1() throws IOException {
         final byte[] input = "12345678900".getBytes();
-        final BufferedInputStream buffis = new BufferedInputStream(new ByteArrayInputStream(input));
-        buffis.read();
-        buffis.mark(5);
-        buffis.skip(5);
-        buffis.reset();
+        final BufferedInputStream bufin = new BufferedInputStream(new ByteArrayInputStream(input));
+        bufin.read();
+        bufin.mark(5);
+        bufin.skip(5);
+        bufin.reset();
     }
 
     /**
@@ -424,10 +425,10 @@ public class UnsynchronizedBufferedInputStreamTest {
     @Test
     public void test_reset_scenario2() throws IOException {
         final byte[] input = "12345678900".getBytes();
-        final BufferedInputStream buffis = new BufferedInputStream(new ByteArrayInputStream(input));
-        buffis.mark(5);
-        buffis.skip(6);
-        buffis.reset();
+        final BufferedInputStream bufin = new BufferedInputStream(new ByteArrayInputStream(input));
+        bufin.mark(5);
+        bufin.skip(6);
+        bufin.reset();
     }
 
     /**
