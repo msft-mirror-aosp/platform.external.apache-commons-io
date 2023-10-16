@@ -1,5 +1,6 @@
 package org.apache.commons.io.input;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -56,7 +58,7 @@ public class UnsynchronizedFilterInputStreamTest {
     @BeforeEach
     protected void setUp() throws IOException {
         fileName = Files.createTempFile(getClass().getSimpleName(), ".tst");
-        Files.write(fileName, DATA.getBytes("UTF-8"));
+        Files.write(fileName, DATA.getBytes(StandardCharsets.UTF_8));
         is = UnsynchronizedFilterInputStream.builder().setInputStream(Files.newInputStream(fileName)).get();
     }
 
@@ -78,7 +80,7 @@ public class UnsynchronizedFilterInputStreamTest {
      */
     @Test
     public void test_available() throws IOException {
-        assertTrue(is.available() == DATA.length(), "Returned incorrect number of available bytes");
+        assertEquals(DATA.length(), is.available(), "Returned incorrect number of available bytes");
     }
 
     /**
@@ -116,7 +118,7 @@ public class UnsynchronizedFilterInputStreamTest {
     @Test
     public void test_read() throws IOException {
         final int c = is.read();
-        assertTrue(c == DATA.charAt(0), "read returned incorrect char");
+        assertEquals(DATA.charAt(0), c, "read returned incorrect char");
     }
 
     /**

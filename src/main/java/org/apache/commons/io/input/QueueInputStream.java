@@ -183,7 +183,7 @@ public class QueueInputStream extends InputStream {
     }
 
     /**
-     * Creates a new QueueOutputStream instance connected to this. Writes to the output stream will be visible to this input stream.
+     * Constructs a new QueueOutputStream instance connected to this. Writes to the output stream will be visible to this input stream.
      *
      * @return QueueOutputStream connected to this stream.
      */
@@ -204,7 +204,7 @@ public class QueueInputStream extends InputStream {
             return value == null ? EOF : 0xFF & value;
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
-            // throw runtime unchecked exception to maintain signature backward-compatibilty of
+            // throw runtime unchecked exception to maintain signature backward-compatibility of
             // this read method, which does not declare IOException
             throw new IllegalStateException(e);
         }
