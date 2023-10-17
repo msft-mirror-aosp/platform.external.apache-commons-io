@@ -132,7 +132,7 @@ public class ReversedLinesFileReader implements Closeable {
         }
 
         /**
-         * Creates the buffer containing any leftover bytes.
+         * Constructs the buffer containing any leftover bytes.
          */
         private void createLeftOver() {
             final int lineLengthBytes = currentLastBytePos + 1;
@@ -275,12 +275,12 @@ public class ReversedLinesFileReader implements Closeable {
     private boolean trailingNewlineOfFileSkipped;
 
     /**
-     * Creates a ReversedLinesFileReader with default block size of 4KB and the
+     * Constructs a ReversedLinesFileReader with default block size of 4KB and the
      * platform's default encoding.
      *
      * @param file the file to be read
      * @throws IOException if an I/O error occurs.
-     * @deprecated Use {@link ReaderInputStream#builder()} instead
+     * @deprecated Use {@link #builder()}, {@link Builder}, and {@link Builder#get()}
      */
     @Deprecated
     public ReversedLinesFileReader(final File file) throws IOException {
@@ -288,14 +288,14 @@ public class ReversedLinesFileReader implements Closeable {
     }
 
     /**
-     * Creates a ReversedLinesFileReader with default block size of 4KB and the
+     * Constructs a ReversedLinesFileReader with default block size of 4KB and the
      * specified encoding.
      *
      * @param file    the file to be read
      * @param charset the charset to use, null uses the default Charset.
      * @throws IOException if an I/O error occurs.
      * @since 2.5
-     * @deprecated Use {@link ReaderInputStream#builder()} instead
+     * @deprecated Use {@link #builder()}, {@link Builder}, and {@link Builder#get()}
      */
     @Deprecated
     public ReversedLinesFileReader(final File file, final Charset charset) throws IOException {
@@ -303,7 +303,7 @@ public class ReversedLinesFileReader implements Closeable {
     }
 
     /**
-     * Creates a ReversedLinesFileReader with the given block size and encoding.
+     * Constructs a ReversedLinesFileReader with the given block size and encoding.
      *
      * @param file      the file to be read
      * @param blockSize size of the internal buffer (for ideal performance this
@@ -312,7 +312,7 @@ public class ReversedLinesFileReader implements Closeable {
      * @param charset  the encoding of the file, null uses the default Charset.
      * @throws IOException if an I/O error occurs.
      * @since 2.3
-     * @deprecated Use {@link ReaderInputStream#builder()} instead
+     * @deprecated Use {@link #builder()}, {@link Builder}, and {@link Builder#get()}
      */
     @Deprecated
     public ReversedLinesFileReader(final File file, final int blockSize, final Charset charset) throws IOException {
@@ -320,7 +320,7 @@ public class ReversedLinesFileReader implements Closeable {
     }
 
     /**
-     * Creates a ReversedLinesFileReader with the given block size and encoding.
+     * Constructs a ReversedLinesFileReader with the given block size and encoding.
      *
      * @param file      the file to be read
      * @param blockSize size of the internal buffer (for ideal performance this
@@ -333,7 +333,7 @@ public class ReversedLinesFileReader implements Closeable {
      *                                                      in version 2.2 if the
      *                                                      encoding is not
      *                                                      supported.
-     * @deprecated Use {@link ReaderInputStream#builder()} instead
+     * @deprecated Use {@link #builder()}, {@link Builder}, and {@link Builder#get()}
      */
     @Deprecated
     public ReversedLinesFileReader(final File file, final int blockSize, final String charsetName) throws IOException {
@@ -341,14 +341,14 @@ public class ReversedLinesFileReader implements Closeable {
     }
 
     /**
-     * Creates a ReversedLinesFileReader with default block size of 4KB and the
+     * Constructs a ReversedLinesFileReader with default block size of 4KB and the
      * specified encoding.
      *
      * @param file    the file to be read
      * @param charset the charset to use, null uses the default Charset.
      * @throws IOException if an I/O error occurs.
      * @since 2.7
-     * @deprecated Use {@link ReaderInputStream#builder()} instead
+     * @deprecated Use {@link #builder()}, {@link Builder}, and {@link Builder#get()}
      */
     @Deprecated
     public ReversedLinesFileReader(final Path file, final Charset charset) throws IOException {
@@ -356,7 +356,7 @@ public class ReversedLinesFileReader implements Closeable {
     }
 
     /**
-     * Creates a ReversedLinesFileReader with the given block size and encoding.
+     * Constructs a ReversedLinesFileReader with the given block size and encoding.
      *
      * @param file      the file to be read
      * @param blockSize size of the internal buffer (for ideal performance this
@@ -365,7 +365,7 @@ public class ReversedLinesFileReader implements Closeable {
      * @param charset  the encoding of the file, null uses the default Charset.
      * @throws IOException if an I/O error occurs.
      * @since 2.7
-     * @deprecated Use {@link ReaderInputStream#builder()} instead
+     * @deprecated Use {@link #builder()}, {@link Builder}, and {@link Builder#get()}
      */
     @Deprecated
     public ReversedLinesFileReader(final Path file, final int blockSize, final Charset charset) throws IOException {
@@ -425,7 +425,7 @@ public class ReversedLinesFileReader implements Closeable {
     }
 
     /**
-     * Creates a ReversedLinesFileReader with the given block size and encoding.
+     * Constructs a ReversedLinesFileReader with the given block size and encoding.
      *
      * @param file        the file to be read
      * @param blockSize   size of the internal buffer (for ideal performance this
@@ -439,7 +439,7 @@ public class ReversedLinesFileReader implements Closeable {
      *                                                      encoding is not
      *                                                      supported.
      * @since 2.7
-     * @deprecated Use {@link ReaderInputStream#builder()} instead
+     * @deprecated Use {@link #builder()}, {@link Builder}, and {@link Builder#get()}
      */
     @Deprecated
     public ReversedLinesFileReader(final Path file, final int blockSize, final String charsetName) throws IOException {
