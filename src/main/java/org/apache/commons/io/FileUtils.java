@@ -36,6 +36,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.CopyOption;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -108,7 +109,7 @@ import org.apache.commons.io.function.Uncheck;
  * {@link SecurityException} are not documented in the Javadoc.
  * </p>
  * <p>
- * Origin of code: Excalibur, Alexandria, Commons-Utils
+ * Provenance: Excalibur, Alexandria, Commons-Utils
  * </p>
  */
 public class FileUtils {
@@ -352,16 +353,13 @@ public class FileUtils {
      * This method checks to see if the two files are different lengths or if they point to the same file, before
      * resorting to byte-by-byte comparison of the contents.
      * </p>
-     * <p>
-     * Code origin: Avalon
-     * </p>
      *
      * @param file1 the first file
      * @param file2 the second file
      * @return true if the content of the files are equal or they both don't exist, false otherwise
      * @throws IllegalArgumentException when an input is not a file.
      * @throws IOException If an I/O error occurs.
-     * @see org.apache.commons.io.file.PathUtils#fileContentEquals(Path,Path,java.nio.file.LinkOption[],java.nio.file.OpenOption...)
+     * @see PathUtils#fileContentEquals(Path,Path)
      */
     public static boolean contentEquals(final File file1, final File file2) throws IOException {
         if (file1 == null && file2 == null) {
@@ -393,9 +391,7 @@ public class FileUtils {
             return true;
         }
 
-        try (InputStream input1 = Files.newInputStream(file1.toPath()); InputStream input2 = Files.newInputStream(file2.toPath())) {
-            return IOUtils.contentEquals(input1, input2);
-        }
+        return PathUtils.fileContentEquals(file1.toPath(), file2.toPath());
     }
 
     /**
@@ -451,12 +447,12 @@ public class FileUtils {
     }
 
     /**
-     * Converts a Collection containing java.io.File instances into array
+     * Converts a Collection containing {@link File} instances into array
      * representation. This is to account for the difference between
      * File.listFiles() and FileUtils.listFiles().
      *
-     * @param files a Collection containing java.io.File instances
-     * @return an array of java.io.File
+     * @param files a Collection containing {@link File} instances
+     * @return an array of {@link File}
      */
     public static File[] convertFileCollectionToFileArray(final Collection<File> files) {
         return files.toArray(EMPTY_FILE_ARRAY);
@@ -1449,7 +1445,7 @@ public class FileUtils {
     /**
      * Returns a {@link File} representing the system temporary directory.
      *
-     * @return the system temporary directory.
+     * @return the system temporary directory as a File
      * @since 2.0
      */
     public static File getTempDirectory() {
@@ -1459,7 +1455,12 @@ public class FileUtils {
     /**
      * Returns the path to the system temporary directory.
      *
-     * @return the path to the system temporary directory.
+     * WARNING: this method relies on the Java system property 'java.io.tmpdir'
+     * which may or may not have a trailing file separator.
+     * This can affect code that uses String processing to manipulate pathnames rather
+     * than the standard libary methods in classes such as {@link java.io.File}
+     *
+     * @return the path to the system temporary directory as a String
      * @since 2.0
      */
     public static String getTempDirectoryPath() {
@@ -1971,7 +1972,7 @@ public class FileUtils {
      * @param dirFilter  optional filter to apply when finding subdirectories.
      *                   If this parameter is {@code null}, subdirectories will not be included in the
      *                   search. Use TrueFileFilter.INSTANCE to match all directories.
-     * @return an iterator of java.io.File for the matching files
+     * @return an iterator of {@link File} for the matching files
      * @see org.apache.commons.io.filefilter.FileFilterUtils
      * @see org.apache.commons.io.filefilter.NameFileFilter
      * @since 1.2
@@ -1988,14 +1989,14 @@ public class FileUtils {
      * </p>
      *
      * @param directory  the directory to search in
-     * @param extensions an array of extensions, ex. {"java","xml"}. If this
+     * @param extensions an array of extensions, for example, {"java","xml"}. If this
      *                   parameter is {@code null}, all files are returned.
      * @param recursive  if true all subdirectories are searched as well
-     * @return an iterator of java.io.File with the matching files
+     * @return an iterator of {@link File} with the matching files
      * @since 1.2
      */
     public static Iterator<File> iterateFiles(final File directory, final String[] extensions, final boolean recursive) {
-        return Uncheck.apply(d -> streamFiles(d, recursive, extensions).iterator(), directory);
+        return StreamIterator.iterator(Uncheck.get(() -> streamFiles(directory, recursive, extensions)));
     }
 
     /**
@@ -2016,7 +2017,7 @@ public class FileUtils {
      * @param dirFilter  optional filter to apply when finding subdirectories.
      *                   If this parameter is {@code null}, subdirectories will not be included in the
      *                   search. Use TrueFileFilter.INSTANCE to match all directories.
-     * @return an iterator of java.io.File for the matching files
+     * @return an iterator of {@link File} for the matching files
      * @see org.apache.commons.io.filefilter.FileFilterUtils
      * @see org.apache.commons.io.filefilter.NameFileFilter
      * @since 2.2
@@ -2216,28 +2217,30 @@ public class FileUtils {
      * @param dirFilter  optional filter to apply when finding subdirectories.
      *                   If this parameter is {@code null}, subdirectories will not be included in the
      *                   search. Use {@link TrueFileFilter#INSTANCE} to match all directories.
-     * @return a collection of java.io.File with the matching files
+     * @return a collection of {@link File} with the matching files
      * @see org.apache.commons.io.filefilter.FileFilterUtils
      * @see org.apache.commons.io.filefilter.NameFileFilter
      */
     public static Collection<File> listFiles(final File directory, final IOFileFilter fileFilter, final IOFileFilter dirFilter) {
         final AccumulatorPathVisitor visitor = Uncheck
             .apply(d -> listAccumulate(d, FileFileFilter.INSTANCE.and(fileFilter), dirFilter, FileVisitOption.FOLLOW_LINKS), directory);
-        return visitor.getFileList().stream().map(Path::toFile).collect(Collectors.toList());
+        return toList(visitor.getFileList().stream().map(Path::toFile));
     }
 
     /**
-     * Finds files within a given directory (and optionally its subdirectories)
+     * Lists files within a given directory (and optionally its subdirectories)
      * which match an array of extensions.
      *
      * @param directory  the directory to search in
-     * @param extensions an array of extensions, ex. {"java","xml"}. If this
+     * @param extensions an array of extensions, for example, {"java","xml"}. If this
      *                   parameter is {@code null}, all files are returned.
      * @param recursive  if true all subdirectories are searched as well
-     * @return a collection of java.io.File with the matching files
+     * @return a collection of {@link File} with the matching files
      */
     public static Collection<File> listFiles(final File directory, final String[] extensions, final boolean recursive) {
-        return Uncheck.apply(d -> toList(streamFiles(d, recursive, extensions)), directory);
+        try (Stream<File> fileStream = Uncheck.get(() -> streamFiles(directory, recursive, extensions))) {
+            return toList(fileStream);
+        }
     }
 
     /**
@@ -2253,7 +2256,7 @@ public class FileUtils {
      * @param dirFilter  optional filter to apply when finding subdirectories.
      *                   If this parameter is {@code null}, subdirectories will not be included in the
      *                   search. Use TrueFileFilter.INSTANCE to match all directories.
-     * @return a collection of java.io.File with the matching files
+     * @return a collection of {@link File} with the matching files
      * @see org.apache.commons.io.FileUtils#listFiles
      * @see org.apache.commons.io.filefilter.FileFilterUtils
      * @see org.apache.commons.io.filefilter.NameFileFilter
@@ -2264,7 +2267,7 @@ public class FileUtils {
             directory);
         final List<Path> list = visitor.getFileList();
         list.addAll(visitor.getDirList());
-        return list.stream().map(Path::toFile).collect(Collectors.toList());
+        return toList(list.stream().map(Path::toFile));
     }
 
     /**
@@ -2570,9 +2573,8 @@ public class FileUtils {
      * @param file the file to read, must not be {@code null}
      * @return the file contents, never {@code null}
      * @throws NullPointerException if file is {@code null}.
-     * @throws FileNotFoundException if the file does not exist, is a directory rather than a regular file, or for some
-     *         other reason cannot be opened for reading.
-     * @throws IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs, including when the file does not exist, is a directory rather than a
+     *         regular file, or for some other reason why the file cannot be opened for reading.
      * @since 1.1
      */
     public static byte[] readFileToByteArray(final File file) throws IOException {
@@ -2587,9 +2589,8 @@ public class FileUtils {
      * @param file the file to read, must not be {@code null}
      * @return the file contents, never {@code null}
      * @throws NullPointerException if file is {@code null}.
-     * @throws FileNotFoundException if the file does not exist, is a directory rather than a regular file, or for some
-     *         other reason cannot be opened for reading.
-     * @throws IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs, including when the file does not exist, is a directory rather than a
+     *         regular file, or for some other reason why the file cannot be opened for reading.
      * @since 1.3.1
      * @deprecated 2.5 use {@link #readFileToString(File, Charset)} instead (and specify the appropriate encoding)
      */
@@ -2606,9 +2607,8 @@ public class FileUtils {
      * @param charsetName the name of the requested charset, {@code null} means platform default
      * @return the file contents, never {@code null}
      * @throws NullPointerException if file is {@code null}.
-     * @throws FileNotFoundException if the file does not exist, is a directory rather than a regular file, or for some
-     *         other reason cannot be opened for reading.
-     * @throws IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs, including when the file does not exist, is a directory rather than a
+     *         regular file, or for some other reason why the file cannot be opened for reading.
      * @since 2.3
      */
     public static String readFileToString(final File file, final Charset charsetName) throws IOException {
@@ -2622,9 +2622,8 @@ public class FileUtils {
      * @param charsetName the name of the requested charset, {@code null} means platform default
      * @return the file contents, never {@code null}
      * @throws NullPointerException if file is {@code null}.
-     * @throws FileNotFoundException if the file does not exist, is a directory rather than a regular file, or for some
-     *         other reason cannot be opened for reading.
-     * @throws IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs, including when the file does not exist, is a directory rather than a
+     *         regular file, or for some other reason why the file cannot be opened for reading.
      * @throws java.nio.charset.UnsupportedCharsetException thrown instead of {@link java.io
      * .UnsupportedEncodingException} in version 2.2 if the named charset is unavailable.
      * @since 2.3
@@ -2640,9 +2639,8 @@ public class FileUtils {
      * @param file the file to read, must not be {@code null}
      * @return the list of Strings representing each line in the file, never {@code null}
      * @throws NullPointerException if file is {@code null}.
-     * @throws FileNotFoundException if the file does not exist, is a directory rather than a regular file, or for some
-     *         other reason cannot be opened for reading.
-     * @throws IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs, including when the file does not exist, is a directory rather than a
+     *         regular file, or for some other reason why the file cannot be opened for reading.
      * @since 1.3
      * @deprecated 2.5 use {@link #readLines(File, Charset)} instead (and specify the appropriate encoding)
      */
@@ -2659,9 +2657,8 @@ public class FileUtils {
      * @param charset the charset to use, {@code null} means platform default
      * @return the list of Strings representing each line in the file, never {@code null}
      * @throws NullPointerException if file is {@code null}.
-     * @throws FileNotFoundException if the file does not exist, is a directory rather than a regular file, or for some
-     *         other reason cannot be opened for reading.
-     * @throws IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs, including when the file does not exist, is a directory rather than a
+     *         regular file, or for some other reason why the file cannot be opened for reading.
      * @since 2.3
      */
     public static List<String> readLines(final File file, final Charset charset) throws IOException {
@@ -2675,9 +2672,8 @@ public class FileUtils {
      * @param charsetName the name of the requested charset, {@code null} means platform default
      * @return the list of Strings representing each line in the file, never {@code null}
      * @throws NullPointerException if file is {@code null}.
-     * @throws FileNotFoundException if the file does not exist, is a directory rather than a regular file, or for some
-     *         other reason cannot be opened for reading.
-     * @throws IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs, including when the file does not exist, is a directory rather than a
+     *         regular file, or for some other reason why the file cannot be opened for reading.
      * @throws java.nio.charset.UnsupportedCharsetException thrown instead of {@link java.io
      * .UnsupportedEncodingException} in version 2.2 if the named charset is unavailable.
      * @since 1.1
@@ -2861,9 +2857,8 @@ public class FileUtils {
      *          {@code false} otherwise
      * @throws NullPointerException if sourceFile is {@code null}.
      * @throws NullPointerException if targetFile is {@code null}.
-     * @throws IOException if setting the last-modified time failed.
      */
-    private static boolean setTimes(final File sourceFile, final File targetFile) throws IOException {
+    private static boolean setTimes(final File sourceFile, final File targetFile) {
         Objects.requireNonNull(sourceFile, "sourceFile");
         Objects.requireNonNull(targetFile, "targetFile");
         try {
@@ -2967,14 +2962,17 @@ public class FileUtils {
     }
 
     /**
-     * Streams over the files in a given directory (and optionally
-     * its subdirectories) which match an array of extensions.
+     * Streams over the files in a given directory (and optionally its subdirectories) which match an array of extensions.
+     * <p>
+     * The returned {@link Stream} may wrap one or more {@link DirectoryStream}s. When you require timely disposal of file system resources, use a
+     * {@code try}-with-resources block to ensure invocation of the stream's {@link Stream#close()} method after the stream operations are completed. Calling a
+     * closed stream causes a {@link IllegalStateException}.
+     * </p>
      *
      * @param directory  the directory to search in
      * @param recursive  if true all subdirectories are searched as well
-     * @param extensions an array of extensions, ex. {"java","xml"}. If this
-     *                   parameter is {@code null}, all files are returned.
-     * @return an iterator of java.io.File with the matching files
+     * @param extensions an array of extensions, for example, {"java","xml"}. If this parameter is {@code null}, all files are returned.
+     * @return a Stream of {@link File} for matching files.
      * @throws IOException if an I/O error is thrown when accessing the starting file.
      * @since 2.9.0
      */
@@ -3006,8 +3004,8 @@ public class FileUtils {
         if (url == null || !"file".equalsIgnoreCase(url.getProtocol())) {
             return null;
         }
-        final String filename = url.getFile().replace('/', File.separatorChar);
-        return new File(decodeUrl(filename));
+        final String fileName = url.getFile().replace('/', File.separatorChar);
+        return new File(decodeUrl(fileName));
     }
 
     /**
@@ -3048,6 +3046,15 @@ public class FileUtils {
         return files;
     }
 
+    /**
+     * Consumes all of the given stream.
+     * <p>
+     * When called from a FileTreeWalker, the walker <em>closes</em> the stream because {@link FileTreeWalker#next()} calls {@code top.stream().close()}.
+     * </p>
+     *
+     * @param stream The stream to consume.
+     * @return a new List.
+     */
     private static List<File> toList(final Stream<File> stream) {
         return stream.collect(Collectors.toList());
     }
