@@ -30,6 +30,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,10 +38,15 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.text.MessageFormat;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
+import org.apache.commons.io.CharsetsTest;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.function.IOFunction;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junitpioneer.jupiter.DefaultLocale;
 
 public class XmlStreamReaderTest {
@@ -162,6 +168,14 @@ public class XmlStreamReaderTest {
         return new ByteArrayInputStream(baos.toByteArray());
     }
 
+    private void parseCharset(final String hdr, final String enc, final IOFunction<InputStream, XmlStreamReader> factory) throws Exception {
+        try (final InputStream stream = new ByteArrayInputStream(hdr.getBytes(StandardCharsets.UTF_8))) {
+            try (final XmlStreamReader xml = factory.apply(stream)) {
+                assertEquals(enc.toUpperCase(Locale.ROOT), xml.getEncoding(), enc);
+            }
+        }
+    }
+
     public void testAlternateDefaultEncoding(final String contentType, final String bomEnc, final String streamEnc, final String prologEnc,
             final String alternateEnc) throws Exception {
         try (InputStream is = getXmlInputStream(bomEnc, prologEnc == null ? XML1 : XML3, streamEnc, prologEnc);
@@ -276,6 +290,8 @@ public class XmlStreamReaderTest {
         assertThrows(NullPointerException.class, () -> new XmlStreamReader((URL) null));
     }
 
+    // XML Stream generator
+
     @Test
     public void testEncodingAttributeXML() throws Exception {
         try (InputStream is = new ByteArrayInputStream(ENCODING_ATTRIBUTE_XML.getBytes(StandardCharsets.UTF_8));
@@ -293,8 +309,6 @@ public class XmlStreamReaderTest {
             assertEquals(xmlReader.getEncoding(), UTF_8);
         }
     }
-
-    // XML Stream generator
 
     @Test
     public void testHttp() throws Exception {
@@ -428,6 +442,20 @@ public class XmlStreamReaderTest {
             } else {
                 assertEquals(xmlReader.getEncoding().substring(0, streamEnc.length()), streamEnc);
             }
+        }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource(CharsetsTest.AVAIL_CHARSETS)
+    public void testIO_815(final String csName) throws Exception {
+        final MessageFormat fmt = new MessageFormat("<?xml version=\"1.0\" encoding=''{0}''?>\n<root>text</root>");
+        final IOFunction<InputStream, XmlStreamReader> factoryCtor = XmlStreamReader::new;
+        final IOFunction<InputStream, XmlStreamReader> factoryBuilder = stream -> XmlStreamReader.builder().setInputStream(stream).get();
+        parseCharset(fmt.format(new Object[] { csName }), csName, factoryCtor);
+        parseCharset(fmt.format(new Object[] { csName }), csName, factoryBuilder);
+        for (final String alias : Charset.forName(csName).aliases()) {
+            parseCharset(fmt.format(new Object[] { alias }), alias, factoryCtor);
+            parseCharset(fmt.format(new Object[] { alias }), alias, factoryBuilder);
         }
     }
 

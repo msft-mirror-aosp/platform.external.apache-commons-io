@@ -105,7 +105,7 @@ public final class UnsynchronizedBufferedInputStream extends UnsynchronizedFilte
     protected volatile byte[] buffer;
 
     /**
-     * The total number of bytes inside the byte array {@code buf}.
+     * The total number of bytes inside the byte array {@code buffer}.
      */
     protected int count;
 
@@ -120,7 +120,7 @@ public final class UnsynchronizedBufferedInputStream extends UnsynchronizedFilte
     protected int markPos = IOUtils.EOF;
 
     /**
-     * The current position within the byte array {@code buf}.
+     * The current position within the byte array {@code buffer}.
      */
     protected int pos;
 
@@ -190,8 +190,8 @@ public final class UnsynchronizedBufferedInputStream extends UnsynchronizedFilte
             }
             final byte[] newbuf = new byte[newLength];
             System.arraycopy(localBuf, 0, newbuf, 0, localBuf.length);
-            // Reassign buf, which will invalidate any local references
-            // FIXME: what if buf was null?
+            // Reassign buffer, which will invalidate any local references
+            // FIXME: what if buffer was null?
             localBuf = buffer = newbuf;
         } else if (markPos > 0) {
             System.arraycopy(localBuf, markPos, localBuf, 0, localBuf.length - markPos);
@@ -276,7 +276,7 @@ public final class UnsynchronizedBufferedInputStream extends UnsynchronizedFilte
      * set and the requested number of bytes is larger than the receiver's buffer size, this implementation bypasses the buffer and simply places the results
      * directly into {@code buffer}.
      *
-     * @param buffer the byte array in which to store the bytes read.
+     * @param dest the byte array in which to store the bytes read.
      * @param offset the initial position in {@code buffer} to store the bytes read from this stream.
      * @param length the maximum number of bytes to store in {@code buffer}.
      * @return the number of bytes actually read or -1 if end of stream.
@@ -284,7 +284,7 @@ public final class UnsynchronizedBufferedInputStream extends UnsynchronizedFilte
      * @throws IOException               if the stream is already closed or another IOException occurs.
      */
     @Override
-    public int read(final byte[] buffer, int offset, final int length) throws IOException {
+    public int read(final byte[] dest, int offset, final int length) throws IOException {
         // Use local ref since buf may be invalidated by an unsynchronized
         // close()
         byte[] localBuf = buffer;
@@ -292,7 +292,7 @@ public final class UnsynchronizedBufferedInputStream extends UnsynchronizedFilte
             throw new IOException("Stream is closed");
         }
         // avoid int overflow
-        if (offset > buffer.length - length || offset < 0 || length < 0) {
+        if (offset > dest.length - length || offset < 0 || length < 0) {
             throw new IndexOutOfBoundsException();
         }
         if (length == 0) {
@@ -307,7 +307,7 @@ public final class UnsynchronizedBufferedInputStream extends UnsynchronizedFilte
         if (pos < count) {
             /* There are bytes available in the buffer. */
             final int copylength = count - pos >= length ? length : count - pos;
-            System.arraycopy(localBuf, pos, buffer, offset, copylength);
+            System.arraycopy(localBuf, pos, dest, offset, copylength);
             pos += copylength;
             if (copylength == length || localIn.available() == 0) {
                 return copylength;
@@ -324,7 +324,7 @@ public final class UnsynchronizedBufferedInputStream extends UnsynchronizedFilte
              * If we're not marked and the required size is greater than the buffer, simply read the bytes directly bypassing the buffer.
              */
             if (markPos == IOUtils.EOF && required >= localBuf.length) {
-                read = localIn.read(buffer, offset, required);
+                read = localIn.read(dest, offset, required);
                 if (read == IOUtils.EOF) {
                     return required == length ? IOUtils.EOF : length - required;
                 }
@@ -341,7 +341,7 @@ public final class UnsynchronizedBufferedInputStream extends UnsynchronizedFilte
                 }
 
                 read = count - pos >= required ? required : count - pos;
-                System.arraycopy(localBuf, pos, buffer, offset, read);
+                System.arraycopy(localBuf, pos, dest, offset, read);
                 pos += read;
             }
             required -= read;
@@ -397,10 +397,12 @@ public final class UnsynchronizedBufferedInputStream extends UnsynchronizedFilte
         }
 
         if (count - pos >= amount) {
-            pos += amount;
+            // (int count - int pos) here is always an int so amount is also in the int range if the above test is true.
+            // We can safely cast to int and avoid static analysis warnings.
+            pos += (int) amount;
             return amount;
         }
-        long read = count - pos;
+        int read = count - pos;
         pos = count;
 
         if (markPos != IOUtils.EOF && amount <= markLimit) {
@@ -408,7 +410,9 @@ public final class UnsynchronizedBufferedInputStream extends UnsynchronizedFilte
                 return read;
             }
             if (count - pos >= amount - read) {
-                pos += amount - read;
+                // (int count - int pos) here is always an int so (amount - read) is also in the int range if the above test is true.
+                // We can safely cast to int and avoid static analysis warnings.
+                pos += (int) amount - read;
                 return amount;
             }
             // Couldn't get all the bytes, skip what we read

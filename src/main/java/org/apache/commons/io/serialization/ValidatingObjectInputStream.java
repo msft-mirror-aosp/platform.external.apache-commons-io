@@ -110,6 +110,32 @@ public class ValidatingObjectInputStream extends ObjectInputStream {
     }
 
     /**
+     * Checks that the class name conforms to requirements.
+     *
+     * @param name The class name
+     * @throws InvalidClassException when a non-accepted class is encountered
+     */
+    private void checkClassName(final String name) throws InvalidClassException {
+        // Reject has precedence over accept
+        for (final ClassNameMatcher m : rejectMatchers) {
+            if (m.matches(name)) {
+                invalidClassNameFound(name);
+            }
+        }
+
+        boolean ok = false;
+        for (final ClassNameMatcher m : acceptMatchers) {
+            if (m.matches(name)) {
+                ok = true;
+                break;
+            }
+        }
+        if (!ok) {
+            invalidClassNameFound(name);
+        }
+    }
+
+    /**
      * Called to throw {@link InvalidClassException} if an invalid
      * class name is found during deserialization. Can be overridden, for example
      * to log those class names.
@@ -172,31 +198,7 @@ public class ValidatingObjectInputStream extends ObjectInputStream {
 
     @Override
     protected Class<?> resolveClass(final ObjectStreamClass osc) throws IOException, ClassNotFoundException {
-        validateClassName(osc.getName());
+        checkClassName(osc.getName());
         return super.resolveClass(osc);
-    }
-
-    /** Check that the classname conforms to requirements.
-     * @param name The class name
-     * @throws InvalidClassException when a non-accepted class is encountered
-     */
-    private void validateClassName(final String name) throws InvalidClassException {
-        // Reject has precedence over accept
-        for (final ClassNameMatcher m : rejectMatchers) {
-            if (m.matches(name)) {
-                invalidClassNameFound(name);
-            }
-        }
-
-        boolean ok = false;
-        for (final ClassNameMatcher m : acceptMatchers) {
-            if (m.matches(name)) {
-                ok = true;
-                break;
-            }
-        }
-        if (!ok) {
-            invalidClassNameFound(name);
-        }
     }
 }
