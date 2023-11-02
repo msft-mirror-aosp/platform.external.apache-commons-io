@@ -47,7 +47,92 @@ The <action> type attribute can be add,update,fix,remove.
   </properties>
 
   <body>
-    <release version="2.14.0" date="2023-09-24" description="Java 8 required.">
+    <release version="2.15.0" date="2023-10-21" description="Java 8 is required.">
+      <!-- FIX -->
+      <action dev="sebb" type="fix" issue="IO-810" due-to="Laurence Gonsalves">
+        XmlStreamReader encoding match RE is too strict.
+      </action>
+      <action dev="ggregory" type="fix" issue="IO-810" due-to="Gregor Dschung, Gary Gregory">
+        Javadoc in FileUtils does not reflect code for thrown exceptions.
+      </action>
+      <action dev="ggregory" type="fix" issue="IO-812" due-to="Adam Rauch, Gary Gregory">
+        Javadoc should mention closing Streams based on file resources.
+      </action>
+      <action dev="ggregory" type="fix" issue="IO-811" due-to="Adam Rauch, Gary Gregory">
+        In tests, Files.walk() direct and indirect callers fail to close the returned Stream.
+      </action>
+      <action dev="ggregory" type="fix" issue="IO-811" due-to="Adam Rauch, Gary Gregory">
+        FileUtils.listFiles(File, String[], boolean) fails to close its internal Stream.
+      </action>
+      <action dev="ggregory" type="fix" issue="IO-811" due-to="Adam Rauch, Gary Gregory">
+        FileUtils.iterateFiles(File, String[], boolean) fails to close its internal Stream.
+      </action>
+      <action dev="ggregory" type="fix" issue="IO-811" due-to="Adam Rauch, Gary Gregory">
+        StreamIterator fails to close its internal Stream.
+      </action>
+      <action dev="ggregory" type="fix" issue="IO-814" due-to="Elliotte Rusty Harold, Gary Gregory">
+        Don't throw UncheckedIOException #491.
+      </action>
+      <action dev="ggregory" type="fix" issue="IO-414" due-to="Elliotte Rusty Harold, Gary Gregory">
+        Don't write a BOM on every (or any) line #492.
+      </action>
+      <action dev="ggregory" type="fix" issue="IO-814" due-to="Gary Gregory">
+        RandomAccessFileMode.create(Path) provides a better NullPointerException message.         
+      </action>
+      <action dev="ggregory" type="fix" due-to="Gary Gregory">
+        Improve performance of PathUtils.fileContentEquals(Path, Path, LinkOption[], OpenOption[]) by about 60%, see PathUtilsContentEqualsBenchmark.
+      </action>
+      <action dev="ggregory" type="fix" due-to="Gary Gregory">
+        Improve performance of PathUtils.fileContentEquals(Path, Path) by about 60%, see PathUtilsContentEqualsBenchmark.
+      </action>
+      <action dev="ggregory" type="fix" due-to="Gary Gregory">
+        Improve performance of FileUtils.contentEquals(File, File) by about 60%, see PathUtilsContentEqualsBenchmark.
+      </action>
+      <action dev="ggregory" type="fix" due-to="Elliotte Rusty Harold">
+        Remove unused test code #494.
+      </action>
+      <action dev="ggregory" type="fix" due-to="sebbASF">
+        [Javadoc] IOUtils#contentEquals does not throw NullPointerException #496.
+      </action>
+      <action dev="ggregory" type="fix" due-to="Gary Gregory">
+        Fix CodeQL warnings in UnsynchronizedBufferedInputStream: Implicit narrowing conversion in compound assignment.
+      </action>
+      <action dev="ggregory" type="fix" due-to="Gary Gregory">
+        MessageDigestCalculatingInputStream.MessageDigestMaintainingObserver.MessageDigestMaintainingObserver(MessageDigest) now throws a NullPointerException
+        if the MessageDigest is null.
+      </action>
+      <action dev="ggregory" type="fix" due-to="Gary Gregory">
+        MessageDigestCalculatingInputStream.MessageDigestCalculatingInputStream(InputStream, MessageDigest) now throws a NullPointerException
+        if the MessageDigest is null.
+      </action>
+      <action issue="IO-816" dev="ggregory" type="fix" due-to="Andreas Loth, Gary Gregory">
+        UnsynchronizedBufferedInputStream.read(byte[], int, int) does not use buffer.
+      </action>
+      <!-- ADD -->
+      <action dev="ggregory" type="add" due-to="Gary Gregory">
+        Add org.apache.commons.io.channels.FileChannels.
+      </action>
+      <action dev="ggregory" type="add" due-to="Gary Gregory">
+        Add RandomAccessFiles#contentEquals(RandomAccessFile, RandomAccessFile).
+      </action>
+      <action dev="ggregory" type="add" due-to="Gary Gregory">
+        Add RandomAccessFiles#reset(RandomAccessFile).
+      </action>
+      <action dev="ggregory" type="add" due-to="Gary Gregory">
+        Add PathUtilsContentEqualsBenchmark.
+      </action>
+      <action dev="ggregory" type="add" due-to="Gary Gregory">
+        Add org.apache.commons.io.StreamIterator.
+      </action>
+      <action dev="ggregory" type="add" due-to="Gary Gregory">
+        Add MessageDigestInputStream and deprecate MessageDigestCalculatingInputStream.
+      </action>
+      <!-- UPDATE -->
+      <action dev="ggregory" type="update" due-to="Gary Gregory">
+        Bump org.apache.commons:commons-parent from 62 to 64.
+      </action>
+    </release>
+    <release version="2.14.0" date="2023-09-24" description="Java 8 is required.">
       <!-- FIX -->
       <action dev="ggregory" type="fix" issue="IO-799" due-to="Jeroen van der Vegt, Gary Gregory">
         ReaderInputStream.read() throws an exception instead of returning -1 when called again after returning -1.
@@ -133,7 +218,7 @@ The <action> type attribute can be add,update,fix,remove.
         Bump commons-lang3 from 3.12 to 3.13.0.
       </action>
     </release>
-    <release version="2.13.0" date="2023-06-03" description="Java 8 required.">
+    <release version="2.13.0" date="2023-06-03" description="Java 8 is required.">
       <!-- FIX -->
       <action issue="IO-791" dev="ggregory" type="fix" due-to="Chad Wilson, Gary Gregory">
         Regression in FileUtils.touch() - no longer creates parent directories.
@@ -204,7 +289,7 @@ The <action> type attribute can be add,update,fix,remove.
         Bump commons-parent from 57 to 58.
       </action>
     </release>
-    <release version="2.12.0" date="2023-05-13" description="Java 8 required.">
+    <release version="2.12.0" date="2023-05-13" description="Java 8 is required.">
       <!-- FIX -->
       <action issue="IO-697" dev="kinow" type="fix" due-to="otter606">
         IOUtils.toByteArray size validation does not match documentation.
@@ -741,7 +826,7 @@ The <action> type attribute can be add,update,fix,remove.
         Bump default buffer size for WriterOutputStream to IOUtils#DEFAULT_BUFFER_SIZE.
       </action>
     </release>
-    <release version="2.11.0" date="2021-07-09" description="Java 8 required.">
+    <release version="2.11.0" date="2021-07-09" description="Java 8 is required.">
       <!-- FIX -->
       <action issue="IO-741" dev="ggregory" type="fix" due-to="Zach Sherman">
         FileUtils.listFiles does not list matching files if File parameter is a symbolic link.
@@ -793,7 +878,7 @@ The <action> type attribute can be add,update,fix,remove.
       </action>
     </release>
     <!-- The release date is the date RC is cut -->
-    <release version="2.10.0" date="2021-06-10" description="Java 8 required.">
+    <release version="2.10.0" date="2021-06-10" description="Java 8 is required.">
       <!-- FIX -->
       <action issue="IO-733" dev="ggregory" type="fix" due-to="Jim Sellers, Gary Gregory">
         RegexFileFilter uses the path and file name instead of just the file name.
@@ -828,7 +913,7 @@ The <action> type attribute can be add,update,fix,remove.
         Bump mockito-inline from 3.10.0 to 3.11.0 #242.
       </action>
     </release>
-    <release version="2.9.0" date="2021-05-22" description="Java 8 required.">
+    <release version="2.9.0" date="2021-05-22" description="Java 8 is required.">
       <!-- FIX -->
       <action issue="IO-686" dev="ggregory" type="fix" due-to="Alan Moffat, Gary Gregory">
         IOUtils.toByteArray(InputStream) Javadoc does not match code.
@@ -1073,7 +1158,7 @@ The <action> type attribute can be add,update,fix,remove.
       </action>
     </release>
     <!-- The release date is the date RC is cut -->
-    <release version="2.8.0" date="2020-09-05" description="Java 8 required.">
+    <release version="2.8.0" date="2020-09-05" description="Java 8 is required.">
       <action dev="ggregory" type="add" due-to="Gary Gregory">
         Add org.apache.commons.io.input.CircularInputStream.
       </action>
@@ -1199,7 +1284,7 @@ The <action> type attribute can be add,update,fix,remove.
       </action>
     </release>
     <!-- The release date is the date RC is cut -->
-    <release version="2.7" date="2020-05-24" description="Java 8 required.">
+    <release version="2.7" date="2020-05-24" description="Java 8 is required.">
       <action issue="IO-589" dev="sebb" type="fix">
         Some tests fail if the base path contains a space.
       </action>
