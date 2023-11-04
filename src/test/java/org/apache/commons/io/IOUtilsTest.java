@@ -1257,7 +1257,7 @@ public class IOUtilsTest {
         assertThrows(NullPointerException.class, () -> IOUtils.resourceToURL(null, ClassLoader.getSystemClassLoader()));
     }
 
-    public void testSingleEOL(final String s1, final String s2, final boolean ifEquals) throws IOException {
+    public void testSingleEOL(final String s1, final String s2, final boolean ifEquals) {
         assertEquals(ifEquals, IOUtils.contentEqualsIgnoreEOL(
                 new CharArrayReader(s1.toCharArray()),
                 new CharArrayReader(s2.toCharArray())
@@ -1747,6 +1747,15 @@ public class IOUtilsTest {
             IOUtils.write(data, os, StandardCharsets.UTF_8);
             assertEquals(repeat, os.getByteCount());
         }
+    }
+
+    @Test
+    public void testWriteLines() throws IOException {
+        final String[] data = {"The", "quick"};
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        IOUtils.writeLines(Arrays.asList(data), "\n", out, "UTF-16");
+        final String result = new String(out.toByteArray(), StandardCharsets.UTF_16);
+        assertEquals("The\nquick\n", result);
     }
 
     @Test

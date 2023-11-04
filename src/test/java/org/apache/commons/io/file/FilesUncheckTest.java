@@ -50,6 +50,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.function.Uncheck;
@@ -166,7 +167,9 @@ public class FilesUncheckTest {
 
     @Test
     public void testFind() {
-        assertNotNull(FilesUncheck.find(FILE_PATH_EMPTY, 0, (t, u) -> false));
+        try (Stream<Path> find = FilesUncheck.find(FILE_PATH_EMPTY, 0, (t, u) -> false)) {
+            assertNotNull(find);
+        }
     }
 
     @Test
@@ -207,17 +210,23 @@ public class FilesUncheckTest {
 
     @Test
     public void testLinesPath() {
-        assertEquals(0, FilesUncheck.lines(FILE_PATH_EMPTY).count());
+        try (Stream<String> stream = FilesUncheck.lines(FILE_PATH_EMPTY)) {
+            assertEquals(0, stream.count());
+        }
     }
 
     @Test
     public void testLinesPathCharset() {
-        assertEquals(0, FilesUncheck.lines(FILE_PATH_EMPTY, StandardCharsets.UTF_8).count());
+        try (Stream<String> stream = FilesUncheck.lines(FILE_PATH_EMPTY, StandardCharsets.UTF_8)) {
+            assertEquals(0, stream.count());
+        }
     }
 
     @Test
     public void testList() {
-        assertEquals(1, FilesUncheck.list(Paths.get("src/test/resources/org/apache/commons/io/dirs-1-file-size-0")).count());
+        try (Stream<Path> stream = FilesUncheck.list(Paths.get("src/test/resources/org/apache/commons/io/dirs-1-file-size-0"))) {
+            assertEquals(1, stream.count());
+        }
     }
 
     @Test
@@ -426,12 +435,16 @@ public class FilesUncheckTest {
 
     @Test
     public void testWalkPathFileVisitOptionArray() {
-        assertTrue(0 < FilesUncheck.walk(TARGET_PATH, FileVisitOption.FOLLOW_LINKS).count());
+        try (Stream<Path> stream = FilesUncheck.walk(TARGET_PATH, FileVisitOption.FOLLOW_LINKS)) {
+            assertTrue(0 < stream.count());
+        }
     }
 
     @Test
     public void testWalkPathIntFileVisitOptionArray() {
-        assertEquals(1, FilesUncheck.walk(TARGET_PATH, 0, FileVisitOption.FOLLOW_LINKS).count());
+        try (Stream<Path> stream = FilesUncheck.walk(TARGET_PATH, 0, FileVisitOption.FOLLOW_LINKS)) {
+            assertEquals(1, stream.count());
+        }
     }
 
     @Test

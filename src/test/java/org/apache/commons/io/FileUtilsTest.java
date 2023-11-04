@@ -40,6 +40,7 @@ import java.math.BigInteger;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,6 +48,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -86,6 +88,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -123,20 +126,6 @@ public class FileUtilsTest extends AbstractTempDirTest {
         }
     }
 
-    // Test helper class to pretend a file is shorter than it is
-    private static class ShorterFile extends File {
-        private static final long serialVersionUID = 1L;
-
-        public ShorterFile(final String pathname) {
-            super(pathname);
-        }
-
-        @Override
-        public long length() {
-            return super.length() - 1;
-        }
-    }
-
     private static final String UTF_8 = StandardCharsets.UTF_8.name();
 
     /** Test data. */
@@ -167,11 +156,6 @@ public class FileUtilsTest extends AbstractTempDirTest {
      * List files recursively
      */
     private static final ListDirectoryWalker LIST_WALKER = new ListDirectoryWalker();
-
-    /**
-     * Delay in milliseconds to make sure test for "last modified date" are accurate
-     */
-    //private static final int LAST_MODIFIED_DELAY = 600;
 
     private File testFile1;
     private File testFile2;
@@ -1452,7 +1436,7 @@ public class FileUtilsTest extends AbstractTempDirTest {
     public void testFileUtils() throws Exception {
         // Loads file from classpath
         final File file1 = new File(tempDirFile, "test.txt");
-        final String filename = file1.getAbsolutePath();
+        final String fileName = file1.getAbsolutePath();
 
         //Create test file on-the-fly (used to be in CVS)
         try (OutputStream out = Files.newOutputStream(file1.toPath())) {
@@ -1461,16 +1445,16 @@ public class FileUtilsTest extends AbstractTempDirTest {
 
         final File file2 = new File(tempDirFile, "test2.txt");
 
-        FileUtils.writeStringToFile(file2, filename, UTF_8);
+        FileUtils.writeStringToFile(file2, fileName, UTF_8);
         assertTrue(file2.exists());
         assertTrue(file2.length() > 0);
 
         final String file2contents = FileUtils.readFileToString(file2, UTF_8);
-        assertEquals(filename, file2contents, "Second file's contents correct");
+        assertEquals(fileName, file2contents, "Second file's contents correct");
 
         assertTrue(file2.delete());
 
-        final String contents = FileUtils.readFileToString(new File(filename), UTF_8);
+        final String contents = FileUtils.readFileToString(new File(fileName), UTF_8);
         assertEquals("This is a test", contents, "FileUtils.fileRead()");
 
     }
@@ -1645,8 +1629,8 @@ public class FileUtilsTest extends AbstractTempDirTest {
     @Test
     public void testIO575() throws IOException {
         final Path sourceDir = Files.createTempDirectory("source-dir");
-        final String filename = "some-file";
-        final Path sourceFile = Files.createFile(sourceDir.resolve(filename));
+        final String fileName = "some-file";
+        final Path sourceFile = Files.createFile(sourceDir.resolve(fileName));
 
         assertEquals(SystemUtils.IS_OS_WINDOWS, sourceFile.toFile().canExecute());
 
@@ -1658,7 +1642,7 @@ public class FileUtilsTest extends AbstractTempDirTest {
 
         FileUtils.copyDirectory(sourceDir.toFile(), destDir.toFile());
 
-        final Path destFile = destDir.resolve(filename);
+        final Path destFile = destDir.resolve(fileName);
 
         assertTrue(destFile.toFile().exists());
         assertTrue(destFile.toFile().canExecute());
@@ -2445,6 +2429,41 @@ public class FileUtilsTest extends AbstractTempDirTest {
     }
 
     @Test
+    public void testReadFileToByteArray_Errors() {
+        assertThrows(NullPointerException.class, () -> FileUtils.readFileToByteArray(null));
+        assertThrows(IOException.class, () -> FileUtils.readFileToByteArray(new File("non-exsistent")));
+        assertThrows(IOException.class, () -> FileUtils.readFileToByteArray(tempDirFile));
+    }
+
+    @Test
+    @EnabledIf("isPosixFilePermissionsSupported")
+    public void testReadFileToByteArray_IOExceptionOnPosixFileSystem() throws Exception {
+        final File file = TestUtils.newFile(tempDirFile, "cant-read.txt");
+        TestUtils.createFile(file, 100);
+        Files.setPosixFilePermissions(file.toPath(), PosixFilePermissions.fromString("---------"));
+
+        assertThrows(IOException.class, () -> FileUtils.readFileToByteArray(file));
+    }
+
+    @Test
+    public void testReadFileToString_Errors() {
+        assertThrows(NullPointerException.class, () -> FileUtils.readFileToString(null));
+        assertThrows(IOException.class, () -> FileUtils.readFileToString(new File("non-exsistent")));
+        assertThrows(IOException.class, () -> FileUtils.readFileToString(tempDirFile));
+        assertThrows(UnsupportedCharsetException.class, () -> FileUtils.readFileToString(tempDirFile, "unsupported-charset"));
+    }
+
+    @Test
+    @EnabledIf("isPosixFilePermissionsSupported")
+    public void testReadFileToString_IOExceptionOnPosixFileSystem() throws Exception {
+        final File file = TestUtils.newFile(tempDirFile, "cant-read.txt");
+        TestUtils.createFile(file, 100);
+        Files.setPosixFilePermissions(file.toPath(), PosixFilePermissions.fromString("---------"));
+
+        assertThrows(IOException.class, () -> FileUtils.readFileToString(file));
+    }
+
+    @Test
     public void testReadFileToStringWithDefaultEncoding() throws Exception {
         final File file = new File(tempDirFile, "read.obj");
         final String fixture = "Hello /u1234";
@@ -2475,6 +2494,24 @@ public class FileUtilsTest extends AbstractTempDirTest {
         } finally {
             TestUtils.deleteFile(file);
         }
+    }
+
+    @Test
+    public void testReadLines_Errors() {
+        assertThrows(NullPointerException.class, () -> FileUtils.readLines(null));
+        assertThrows(IOException.class, () -> FileUtils.readLines(new File("non-exsistent")));
+        assertThrows(IOException.class, () -> FileUtils.readLines(tempDirFile));
+        assertThrows(UnsupportedCharsetException.class, () -> FileUtils.readLines(tempDirFile, "unsupported-charset"));
+    }
+
+    @Test
+    @EnabledIf("isPosixFilePermissionsSupported")
+    public void testReadLines_IOExceptionOnPosixFileSystem() throws Exception {
+        final File file = TestUtils.newFile(tempDirFile, "cant-read.txt");
+        TestUtils.createFile(file, 100);
+        Files.setPosixFilePermissions(file.toPath(), PosixFilePermissions.fromString("---------"));
+
+        assertThrows(IOException.class, () -> FileUtils.readLines(file));
     }
 
     @Test
