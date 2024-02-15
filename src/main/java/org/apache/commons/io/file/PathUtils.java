@@ -21,7 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
+import java.io.RandomAccessFile;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -70,13 +70,14 @@ import java.util.stream.Stream;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.RandomAccessFileMode;
+import org.apache.commons.io.RandomAccessFiles;
 import org.apache.commons.io.ThreadUtils;
 import org.apache.commons.io.file.Counters.PathCounters;
 import org.apache.commons.io.file.attribute.FileTimes;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.function.IOFunction;
-import org.apache.commons.io.function.Uncheck;
+import org.apache.commons.io.function.IOSupplier;
 
 /**
  * NIO Path utilities.
@@ -89,7 +90,7 @@ public final class PathUtils {
      * Private worker/holder that computes and tracks relative path names and their equality. We reuse the sorted relative
      * lists when comparing directories.
      */
-    private static class RelativeSortedPaths {
+    private static final class RelativeSortedPaths {
 
         final boolean equals;
         // final List<Path> relativeDirList1; // might need later?
@@ -164,6 +165,13 @@ public final class PathUtils {
      * @since 2.8.0
      */
     public static final DeleteOption[] EMPTY_DELETE_OPTION_ARRAY = {};
+
+    /**
+     * Empty {@link FileAttribute} array.
+     *
+     * @since 2.13.0
+     */
+    public static final FileAttribute<?>[] EMPTY_FILE_ATTRIBUTE_ARRAY = {};
 
     /**
      * Empty {@link FileVisitOption} array.
@@ -255,6 +263,22 @@ public final class PathUtils {
     }
 
     /**
+     * Copies the InputStream from the supplier with {@link Files#copy(InputStream, Path, CopyOption...)}.
+     *
+     * @param in Supplies the InputStream.
+     * @param target See {@link Files#copy(InputStream, Path, CopyOption...)}.
+     * @param copyOptions See {@link Files#copy(InputStream, Path, CopyOption...)}.
+     * @return See {@link Files#copy(InputStream, Path, CopyOption...)}
+     * @throws IOException See {@link Files#copy(InputStream, Path, CopyOption...)}
+     * @since 2.12.0
+     */
+    public static long copy(final IOSupplier<InputStream> in, final Path target, final CopyOption... copyOptions) throws IOException {
+        try (InputStream inputStream = in.get()) {
+            return Files.copy(inputStream, target, copyOptions);
+        }
+    }
+
+    /**
      * Copies a directory to another directory.
      *
      * @param sourceDirectory The source directory.
@@ -280,10 +304,8 @@ public final class PathUtils {
      * @see Files#copy(InputStream, Path, CopyOption...)
      */
     public static Path copyFile(final URL sourceFile, final Path targetFile, final CopyOption... copyOptions) throws IOException {
-        try (InputStream inputStream = sourceFile.openStream()) {
-            Files.copy(inputStream, targetFile, copyOptions);
-            return targetFile;
-        }
+        copy(sourceFile::openStream, targetFile, copyOptions);
+        return targetFile;
     }
 
     /**
@@ -311,11 +333,9 @@ public final class PathUtils {
      * @see Files#copy(InputStream, Path, CopyOption...)
      */
     public static Path copyFileToDirectory(final URL sourceFile, final Path targetDirectory, final CopyOption... copyOptions) throws IOException {
-        try (InputStream inputStream = sourceFile.openStream()) {
-            final Path resolve = targetDirectory.resolve(FilenameUtils.getName(sourceFile.getFile()));
-            Files.copy(inputStream, resolve, copyOptions);
-            return resolve;
-        }
+        final Path resolve = targetDirectory.resolve(FilenameUtils.getName(sourceFile.getFile()));
+        copy(sourceFile::openStream, resolve, copyOptions);
+        return resolve;
     }
 
     /**
@@ -343,6 +363,9 @@ public final class PathUtils {
 
     /**
      * Creates the parent directories for the given {@code path}.
+     * <p>
+     * If the parent directory already exists, then return it.
+     * </p>
      *
      * @param path The path to a file (or directory).
      * @param attrs An optional list of file attributes to set atomically when creating the directories.
@@ -356,6 +379,9 @@ public final class PathUtils {
 
     /**
      * Creates the parent directories for the given {@code path}.
+     * <p>
+     * If the parent directory already exists, then return it.
+     * </p>
      *
      * @param path The path to a file (or directory).
      * @param linkOption A {@link LinkOption} or null.
@@ -364,10 +390,15 @@ public final class PathUtils {
      * @throws IOException if an I/O error occurs.
      * @since 2.12.0
      */
-    public static Path createParentDirectories(final Path path, final LinkOption linkOption, final FileAttribute<?>... attrs) throws IOException {
+    public static Path createParentDirectories(final Path path, final LinkOption linkOption,
+            final FileAttribute<?>... attrs) throws IOException {
         Path parent = getParent(path);
         parent = linkOption == LinkOption.NOFOLLOW_LINKS ? parent : readIfSymbolicLink(parent);
-        return parent == null ? null : Files.createDirectories(parent, attrs);
+        if (parent == null) {
+            return null;
+        }
+        final boolean exists = linkOption == null ? Files.exists(parent) : Files.exists(parent, linkOption);
+        return exists ? parent : Files.createDirectories(parent, attrs);
     }
 
     /**
@@ -572,7 +603,7 @@ public final class PathUtils {
      * @param path the path to delete.
      * @since 3.13.0
      */
-    public static void deleteOnExit(Path path) {
+    public static void deleteOnExit(final Path path) {
         Objects.requireNonNull(path.toFile()).deleteOnExit();
     }
 
@@ -688,20 +719,20 @@ public final class PathUtils {
     /**
      * Compares the file contents of two Paths to determine if they are equal or not.
      * <p>
-     * File content is accessed through {@link Files#newInputStream(Path,OpenOption...)}.
+     * File content is accessed through {@link RandomAccessFileMode#create(Path)}.
      * </p>
      *
      * @param path1 the first stream.
      * @param path2 the second stream.
      * @param linkOptions options specifying how files are followed.
-     * @param openOptions options specifying how files are opened.
+     * @param openOptions ignored.
      * @return true if the content of the streams are equal or they both don't exist, false otherwise.
-     * @throws NullPointerException if either input is null.
+     * @throws NullPointerException if openOptions is null.
      * @throws IOException if an I/O error occurs.
      * @see org.apache.commons.io.FileUtils#contentEquals(java.io.File, java.io.File)
      */
     public static boolean fileContentEquals(final Path path1, final Path path2, final LinkOption[] linkOptions, final OpenOption[] openOptions)
-        throws IOException {
+            throws IOException {
         if (path1 == null && path2 == null) {
             return true;
         }
@@ -735,9 +766,9 @@ public final class PathUtils {
             // same file
             return true;
         }
-        try (InputStream inputStream1 = Files.newInputStream(nPath1, openOptions);
-            InputStream inputStream2 = Files.newInputStream(nPath2, openOptions)) {
-            return IOUtils.contentEquals(inputStream1, inputStream2);
+        try (RandomAccessFile raf1 = RandomAccessFileMode.READ_ONLY.create(path1.toRealPath(linkOptions));
+                RandomAccessFile raf2 = RandomAccessFileMode.READ_ONLY.create(path2.toRealPath(linkOptions))) {
+            return RandomAccessFiles.contentEquals(raf1, raf2);
         }
     }
 
@@ -1151,8 +1182,12 @@ public final class PathUtils {
 
     /**
      * Creates a new DirectoryStream for Paths rooted at the given directory.
+     * <p>
+     * If you don't use the try-with-resources construct, then you must call the stream's {@link Stream#close()} method after iteration is complete to free any
+     * resources held for the open directory.
+     * </p>
      *
-     * @param dir the path to the directory to stream.
+     * @param dir        the path to the directory to stream.
      * @param pathFilter the directory stream filter.
      * @return a new instance.
      * @throws IOException if an I/O error occurs.
@@ -1212,21 +1247,20 @@ public final class PathUtils {
     }
 
     /**
-     * Reads the BasicFileAttributes from the given path. Returns null instead of throwing
-     * {@link UnsupportedOperationException}. Throws {@link Uncheck} instead of {@link IOException}.
+     * Reads the BasicFileAttributes from the given path. Returns null if the attributes can't be read.
      *
      * @param <A> The {@link BasicFileAttributes} type
      * @param path The Path to test.
      * @param type the {@link Class} of the file attributes required to read.
      * @param options options indicating how to handle symbolic links.
-     * @return the file attributes.
+     * @return the file attributes or null if the attributes can't be read.
      * @see Files#readAttributes(Path, Class, LinkOption...)
      * @since 2.12.0
      */
     public static <A extends BasicFileAttributes> A readAttributes(final Path path, final Class<A> type, final LinkOption... options) {
         try {
-            return path == null ? null : Uncheck.apply(Files::readAttributes, path, type, options);
-        } catch (final UnsupportedOperationException e) {
+            return path == null ? null : Files.readAttributes(path, type, options);
+        } catch (final UnsupportedOperationException | IOException e) {
             // For example, on Windows.
             return null;
         }
@@ -1239,16 +1273,14 @@ public final class PathUtils {
      * @return the path attributes.
      * @throws IOException if an I/O error occurs.
      * @since 2.9.0
-     * @deprecated Will be removed in 3.0.0 in favor of {@link #readBasicFileAttributes(Path, LinkOption...)}.
      */
-    @Deprecated
     public static BasicFileAttributes readBasicFileAttributes(final Path path) throws IOException {
         return Files.readAttributes(path, BasicFileAttributes.class);
     }
 
     /**
-     * Reads the BasicFileAttributes from the given path. Returns null instead of throwing
-     * {@link UnsupportedOperationException}.
+     * Reads the BasicFileAttributes from the given path. Returns null if the attributes
+     * can't be read.
      *
      * @param path the path to read.
      * @param options options indicating how to handle symbolic links.
@@ -1260,12 +1292,11 @@ public final class PathUtils {
     }
 
     /**
-     * Reads the BasicFileAttributes from the given path. Returns null instead of throwing
-     * {@link UnsupportedOperationException}.
+     * Reads the BasicFileAttributes from the given path. Returns null if the attributes
+     * can't be read.
      *
      * @param path the path to read.
      * @return the path attributes.
-     * @throws UncheckedIOException if an I/O error occurs
      * @since 2.9.0
      * @deprecated Use {@link #readBasicFileAttributes(Path, LinkOption...)}.
      */
@@ -1275,8 +1306,8 @@ public final class PathUtils {
     }
 
     /**
-     * Reads the DosFileAttributes from the given path. Returns null instead of throwing
-     * {@link UnsupportedOperationException}.
+     * Reads the DosFileAttributes from the given path. Returns null if the attributes
+     * can't be read.
      *
      * @param path the path to read.
      * @param options options indicating how to handle symbolic links.
@@ -1292,8 +1323,8 @@ public final class PathUtils {
     }
 
     /**
-     * Reads the PosixFileAttributes or DosFileAttributes from the given path. Returns null instead of throwing
-     * {@link UnsupportedOperationException}.
+     * Reads the PosixFileAttributes or DosFileAttributes from the given path. Returns null if the attributes
+     * can't be read.
      *
      * @param path The Path to read.
      * @param options options indicating how to handle symbolic links.
@@ -1586,7 +1617,7 @@ public final class PathUtils {
 
     /**
      * Implements behavior similar to the Unix "touch" utility. Creates a new file with size 0, or, if the file exists, just
-     * updates the file's modified time.
+     * updates the file's modified time. this method creates parent directories if they do not exist.
      *
      * @param file the file to touch.
      * @return The given file.
@@ -1597,6 +1628,7 @@ public final class PathUtils {
     public static Path touch(final Path file) throws IOException {
         Objects.requireNonNull(file, "file");
         if (!Files.exists(file)) {
+            createParentDirectories(file);
             Files.createFile(file);
         } else {
             FileTimes.setLastModifiedTime(file);
@@ -1614,11 +1646,11 @@ public final class PathUtils {
      * @param <T> See {@link Files#walkFileTree(Path,FileVisitor)}.
      * @return the given visitor.
      *
+     * @throws NoSuchFileException if the directory does not exist.
      * @throws IOException if an I/O error is thrown by a visitor method.
      * @throws NullPointerException if the directory is {@code null}.
      */
     public static <T extends FileVisitor<? super Path>> T visitFileTree(final T visitor, final Path directory) throws IOException {
-        requireExists(directory, "directory");
         Files.walkFileTree(directory, visitor);
         return visitor;
     }
@@ -1719,6 +1751,11 @@ public final class PathUtils {
 
     /**
      * Returns a stream of filtered paths.
+     * <p>
+     * The returned {@link Stream} may wrap one or more {@link DirectoryStream}s. When you require timely disposal of file system resources, use a
+     * {@code try}-with-resources block to ensure invocation of the stream's {@link Stream#close()} method after the stream operations are completed. Calling a
+     * closed stream causes a {@link IllegalStateException}.
+     * </p>
      *
      * @param start the start path
      * @param pathFilter the path filter
@@ -1769,7 +1806,7 @@ public final class PathUtils {
     }
 
     /**
-     * Does allow to instantiate.
+     * Prevents instantiation.
      */
     private PathUtils() {
         // do not instantiate.

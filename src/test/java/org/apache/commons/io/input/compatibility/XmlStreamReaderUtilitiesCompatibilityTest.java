@@ -18,7 +18,7 @@ package org.apache.commons.io.input.compatibility;
 
 import java.io.IOException;
 
-import org.apache.commons.io.input.StringInputStream;
+import org.apache.commons.io.input.CharSequenceInputStream;
 import org.apache.commons.io.input.XmlStreamReaderUtilitiesTest;
 
 /**
@@ -27,9 +27,9 @@ import org.apache.commons.io.input.XmlStreamReaderUtilitiesTest;
 public class XmlStreamReaderUtilitiesCompatibilityTest extends XmlStreamReaderUtilitiesTest {
 
     /** Mock {@link XmlStreamReader} implementation */
-    private static class MockXmlStreamReader extends XmlStreamReader {
+    private static final class MockXmlStreamReader extends XmlStreamReader {
         MockXmlStreamReader(final String defaultEncoding) throws IOException {
-            super(new StringInputStream(), null, true, defaultEncoding);
+            super(CharSequenceInputStream.builder().setCharSequence("").get(), null, true, defaultEncoding);
         }
     }
     @Override
