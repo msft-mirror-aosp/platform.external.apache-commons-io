@@ -22,6 +22,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
@@ -42,6 +43,7 @@ import java.nio.file.attribute.UserPrincipal;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.function.Uncheck;
@@ -54,10 +56,10 @@ import org.apache.commons.io.function.Uncheck;
  * @see UncheckedIOException
  * @since 2.12.0
  */
-public class FilesUncheck {
+public final class FilesUncheck {
 
     /**
-     * Delegates to {@link Files#copy(InputStream, Path,CopyOption...)} throwing {@link UncheckedIOException} instead of
+     * Delegates to {@link Files#copy(InputStream, Path, CopyOption...)} throwing {@link UncheckedIOException} instead of
      * {@link IOException}.
      *
      * @param in See delegate.
@@ -242,6 +244,26 @@ public class FilesUncheck {
     }
 
     /**
+     * Delegates to {@link Files#find(Path, int, BiPredicate, FileVisitOption...)} throwing {@link UncheckedIOException} instead of {@link IOException}.
+     * <p>
+     * The returned {@link Stream} wraps a {@link DirectoryStream}. When you require timely disposal of file system resources, use a {@code try}-with-resources
+     * block to ensure invocation of the stream's {@link Stream#close()} method after the stream operations are completed.
+     * </p>
+     *
+     * @param start    See delegate.
+     * @param maxDepth See delegate.
+     * @param matcher  See delegate.
+     * @param options  See delegate.
+     * @return See delegate.
+     * @throws UncheckedIOException Wraps an {@link IOException}.
+     * @since 2.14.0
+     */
+    public static Stream<Path> find(final Path start, final int maxDepth, final BiPredicate<Path, BasicFileAttributes> matcher,
+            final FileVisitOption... options) {
+        return Uncheck.apply(Files::find, start, maxDepth, matcher, options);
+    }
+
+    /**
      * Delegates to {@link Files#getAttribute(Path, String, LinkOption...)} throwing {@link UncheckedIOException} instead of
      * {@link IOException}.
      *
@@ -331,6 +353,10 @@ public class FilesUncheck {
 
     /**
      * Delegates to {@link Files#lines(Path)} throwing {@link UncheckedIOException} instead of {@link IOException}.
+     * <p>
+     * The returned {@link Stream} wraps a {@link Reader}. When you require timely disposal of file system resources, use a {@code try}-with-resources block to
+     * ensure invocation of the stream's {@link Stream#close()} method after the stream operations are completed.
+     * </p>
      *
      * @param path See delegate.
      * @return See delegate.
@@ -342,6 +368,10 @@ public class FilesUncheck {
 
     /**
      * Delegates to {@link Files#lines(Path, Charset)} throwing {@link UncheckedIOException} instead of {@link IOException}.
+     * <p>
+     * The returned {@link Stream} wraps a {@link Reader}. When you require timely disposal of file system resources, use a {@code try}-with-resources block to
+     * ensure invocation of the stream's {@link Stream#close()} method after the stream operations are completed.
+     * </p>
      *
      * @param path See delegate.
      * @param cs See delegate.
@@ -354,6 +384,10 @@ public class FilesUncheck {
 
     /**
      * Delegates to {@link Files#list(Path)} throwing {@link UncheckedIOException} instead of {@link IOException}.
+     * <p>
+     * The returned {@link Stream} wraps a {@link DirectoryStream}. When you require timely disposal of file system resources, use a {@code try}-with-resources
+     * block to ensure invocation of the stream's {@link Stream#close()} method after the stream operations are completed.
+     * </p>
      *
      * @param dir See delegate.
      * @return See delegate.
@@ -457,8 +491,11 @@ public class FilesUncheck {
     }
 
     /**
-     * Delegates to {@link Files#newDirectoryStream(Path)} throwing {@link UncheckedIOException} instead of
-     * {@link IOException}.
+     * Delegates to {@link Files#newDirectoryStream(Path)} throwing {@link UncheckedIOException} instead of {@link IOException}.
+     * <p>
+     * If you don't use the try-with-resources construct, then you must call the stream's {@link Stream#close()} method after iteration is complete to free any
+     * resources held for the open directory.
+     * </p>
      *
      * @param dir See delegate.
      * @return See delegate.
@@ -468,10 +505,14 @@ public class FilesUncheck {
     }
 
     /**
-     * Delegates to {@link Files#newDirectoryStream(Path, java.nio.file.DirectoryStream.Filter)} throwing
-     * {@link UncheckedIOException} instead of {@link IOException}.
+     * Delegates to {@link Files#newDirectoryStream(Path, java.nio.file.DirectoryStream.Filter)} throwing {@link UncheckedIOException} instead of
+     * {@link IOException}.
+     * <p>
+     * If you don't use the try-with-resources construct, then you must call the stream's {@link Stream#close()} method after iteration is complete to free any
+     * resources held for the open directory.
+     * </p>
      *
-     * @param dir See delegate.
+     * @param dir    See delegate.
      * @param filter See delegate.
      * @return See delegate.
      */
@@ -482,6 +523,10 @@ public class FilesUncheck {
     /**
      * Delegates to {@link Files#newDirectoryStream(Path, String)} throwing {@link UncheckedIOException} instead of
      * {@link IOException}.
+     * <p>
+     * The returned {@link Stream} wraps a {@link DirectoryStream}. When you require timely disposal of file system resources, use a {@code try}-with-resources
+     * block to ensure invocation of the stream's {@link Stream#close()} method after the stream operations are completed.
+     * </p>
      *
      * @param dir See delegate.
      * @param glob See delegate.
@@ -657,10 +702,14 @@ public class FilesUncheck {
     }
 
     /**
-     * Delegates to {@link Files#walk(Path, FileVisitOption...)} throwing {@link UncheckedIOException} instead of
-     * {@link IOException}.
+     * Delegates to {@link Files#walk(Path, FileVisitOption...)} throwing {@link UncheckedIOException} instead of {@link IOException}.
+     * <p>
+     * The returned {@link Stream} may wrap one or more {@link DirectoryStream}s. When you require timely disposal of file system resources, use a
+     * {@code try}-with-resources block to ensure invocation of the stream's {@link Stream#close()} method after the stream operations are completed. Calling a
+     * closed stream causes a {@link IllegalStateException}.
+     * </p>
      *
-     * @param start See delegate.
+     * @param start   See delegate.
      * @param options See delegate.
      * @return See delegate.
      */
@@ -669,12 +718,16 @@ public class FilesUncheck {
     }
 
     /**
-     * Delegates to {@link Files#walk(Path, int, FileVisitOption...)} throwing {@link UncheckedIOException} instead of
-     * {@link IOException}.
+     * Delegates to {@link Files#walk(Path, int, FileVisitOption...)} throwing {@link UncheckedIOException} instead of {@link IOException}.
+     * <p>
+     * The returned {@link Stream} may wrap one or more {@link DirectoryStream}s. When you require timely disposal of file system resources, use a
+     * {@code try}-with-resources block to ensure invocation of the stream's {@link Stream#close()} method after the stream operations are completed. Calling a
+     * closed stream causes a {@link IllegalStateException}.
+     * </p>
      *
-     * @param start See delegate.
+     * @param start    See delegate.
      * @param maxDepth See delegate.
-     * @param options See delegate.
+     * @param options  See delegate.
      * @return See delegate.
      */
     public static Stream<Path> walk(final Path start, final int maxDepth, final FileVisitOption... options) {

@@ -42,10 +42,13 @@ public class IOIndexedException extends IOException {
         return String.format("%s #%,d: %s", name, index, msg);
     }
 
+    /**
+     * Index.
+     */
     private final int index;
 
     /**
-     * Creates a new exception.
+     * Constructs a new exception.
      *
      * @param index index of this exception.
      * @param cause cause exceptions.
