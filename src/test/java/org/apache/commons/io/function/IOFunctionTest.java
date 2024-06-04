@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test;
  */
 public class IOFunctionTest {
 
-    private static class Holder<T> {
+    private static final class Holder<T> {
         T value;
     }
 
@@ -168,7 +168,7 @@ public class IOFunctionTest {
     public void testIdentity() throws IOException {
         assertEquals(IOFunction.identity(), IOFunction.identity());
         final IOFunction<byte[], byte[]> identityFunction = IOFunction.identity();
-        final byte[] buf = new byte[] {(byte) 0xa, (byte) 0xb, (byte) 0xc};
+        final byte[] buf = {(byte) 0xa, (byte) 0xb, (byte) 0xc};
         assertEquals(buf, identityFunction.apply(buf));
         assertArrayEquals(buf, identityFunction.apply(buf));
     }

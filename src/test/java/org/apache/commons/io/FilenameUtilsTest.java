@@ -38,9 +38,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * This is used to test FilenameUtils for correctness.
- *
- * @see FilenameUtils
+ * Tests {@link FilenameUtils}.
  */
 public class FilenameUtilsTest {
 
@@ -220,7 +218,7 @@ public class FilenameUtilsTest {
     @Test
     public void testGetBaseName() {
         assertNull(FilenameUtils.getBaseName(null));
-        assertEquals("noseperator", FilenameUtils.getBaseName("noseperator.inthispath"));
+        assertEquals("noseparator", FilenameUtils.getBaseName("noseparator.inthispath"));
         assertEquals("c", FilenameUtils.getBaseName("a/b/c.txt"));
         assertEquals("c", FilenameUtils.getBaseName("a/b/c"));
         assertEquals("", FilenameUtils.getBaseName("a/b/c/"));
@@ -251,12 +249,8 @@ public class FilenameUtilsTest {
 
         if (FilenameUtils.isSystemWindows()) {
             // Special case handling for NTFS ADS names
-            try {
-                FilenameUtils.getExtension("foo.exe:bar.txt");
-                throw new AssertionError("Expected Exception");
-            } catch (final IllegalArgumentException e) {
-                assertEquals("NTFS ADS separator (':') in file name is forbidden.", e.getMessage());
-            }
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> FilenameUtils.getExtension("foo.exe:bar.txt"));
+            assertEquals("NTFS ADS separator (':') in file name is forbidden.", e.getMessage());
         } else {
             // Upwards compatibility:
             assertEquals("txt", FilenameUtils.getExtension("foo.exe:bar.txt"));
@@ -266,7 +260,7 @@ public class FilenameUtilsTest {
     @Test
     public void testGetFullPath() {
         assertNull(FilenameUtils.getFullPath(null));
-        assertEquals("", FilenameUtils.getFullPath("noseperator.inthispath"));
+        assertEquals("", FilenameUtils.getFullPath("noseparator.inthispath"));
         assertEquals("a/b/", FilenameUtils.getFullPath("a/b/c.txt"));
         assertEquals("a/b/", FilenameUtils.getFullPath("a/b/c"));
         assertEquals("a/b/c/", FilenameUtils.getFullPath("a/b/c/"));
@@ -308,7 +302,7 @@ public class FilenameUtilsTest {
     @Test
     public void testGetFullPathNoEndSeparator() {
         assertNull(FilenameUtils.getFullPathNoEndSeparator(null));
-        assertEquals("", FilenameUtils.getFullPathNoEndSeparator("noseperator.inthispath"));
+        assertEquals("", FilenameUtils.getFullPathNoEndSeparator("noseparator.inthispath"));
         assertEquals("a/b", FilenameUtils.getFullPathNoEndSeparator("a/b/c.txt"));
         assertEquals("a/b", FilenameUtils.getFullPathNoEndSeparator("a/b/c"));
         assertEquals("a/b/c", FilenameUtils.getFullPathNoEndSeparator("a/b/c/"));
@@ -369,7 +363,7 @@ public class FilenameUtilsTest {
     @Test
     public void testGetName() {
         assertNull(FilenameUtils.getName(null));
-        assertEquals("noseperator.inthispath", FilenameUtils.getName("noseperator.inthispath"));
+        assertEquals("noseparator.inthispath", FilenameUtils.getName("noseparator.inthispath"));
         assertEquals("c.txt", FilenameUtils.getName("a/b/c.txt"));
         assertEquals("c", FilenameUtils.getName("a/b/c"));
         assertEquals("", FilenameUtils.getName("a/b/c/"));
@@ -379,9 +373,9 @@ public class FilenameUtilsTest {
     @Test
     public void testGetPath() {
         assertNull(FilenameUtils.getPath(null));
-        assertEquals("", FilenameUtils.getPath("noseperator.inthispath"));
-        assertEquals("", FilenameUtils.getPath("/noseperator.inthispath"));
-        assertEquals("", FilenameUtils.getPath("\\noseperator.inthispath"));
+        assertEquals("", FilenameUtils.getPath("noseparator.inthispath"));
+        assertEquals("", FilenameUtils.getPath("/noseparator.inthispath"));
+        assertEquals("", FilenameUtils.getPath("\\noseparator.inthispath"));
         assertEquals("a/b/", FilenameUtils.getPath("a/b/c.txt"));
         assertEquals("a/b/", FilenameUtils.getPath("a/b/c"));
         assertEquals("a/b/c/", FilenameUtils.getPath("a/b/c/"));
@@ -422,9 +416,9 @@ public class FilenameUtilsTest {
     @Test
     public void testGetPathNoEndSeparator() {
         assertNull(FilenameUtils.getPath(null));
-        assertEquals("", FilenameUtils.getPath("noseperator.inthispath"));
-        assertEquals("", FilenameUtils.getPathNoEndSeparator("/noseperator.inthispath"));
-        assertEquals("", FilenameUtils.getPathNoEndSeparator("\\noseperator.inthispath"));
+        assertEquals("", FilenameUtils.getPath("noseparator.inthispath"));
+        assertEquals("", FilenameUtils.getPathNoEndSeparator("/noseparator.inthispath"));
+        assertEquals("", FilenameUtils.getPathNoEndSeparator("\\noseparator.inthispath"));
         assertEquals("a/b", FilenameUtils.getPathNoEndSeparator("a/b/c.txt"));
         assertEquals("a/b", FilenameUtils.getPathNoEndSeparator("a/b/c"));
         assertEquals("a/b/c", FilenameUtils.getPathNoEndSeparator("a/b/c/"));
@@ -587,12 +581,8 @@ public class FilenameUtilsTest {
 
         if (FilenameUtils.isSystemWindows()) {
             // Special case handling for NTFS ADS names
-            try {
-                FilenameUtils.indexOfExtension("foo.exe:bar.txt");
-                throw new AssertionError("Expected Exception");
-            } catch (final IllegalArgumentException e) {
-                assertEquals("NTFS ADS separator (':') in file name is forbidden.", e.getMessage());
-            }
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> FilenameUtils.indexOfExtension("foo.exe:bar.txt"));
+            assertEquals("NTFS ADS separator (':') in file name is forbidden.", e.getMessage());
         } else {
             // Upwards compatibility on other systems
             assertEquals(11, FilenameUtils.indexOfExtension("foo.exe:bar.txt"));
@@ -603,7 +593,7 @@ public class FilenameUtilsTest {
     @Test
     public void testIndexOfLastSeparator() {
         assertEquals(-1, FilenameUtils.indexOfLastSeparator(null));
-        assertEquals(-1, FilenameUtils.indexOfLastSeparator("noseperator.inthispath"));
+        assertEquals(-1, FilenameUtils.indexOfLastSeparator("noseparator.inthispath"));
         assertEquals(3, FilenameUtils.indexOfLastSeparator("a/b/c"));
         assertEquals(3, FilenameUtils.indexOfLastSeparator("a\\b\\c"));
     }

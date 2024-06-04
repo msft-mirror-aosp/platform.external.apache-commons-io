@@ -25,19 +25,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Random;
 
+import org.apache.commons.io.input.CharSequenceInputStream;
 import org.apache.commons.io.input.DemuxInputStream;
-import org.apache.commons.io.input.StringInputStream;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.io.output.DemuxOutputStream;
 import org.apache.commons.io.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 /**
- * Basic unit tests for the multiplexing streams.
+ * Tests {@link DemuxInputStream}.
  */
 public class DemuxInputStreamTest {
 
-    private static class ReaderThread extends Thread {
+    private static final class ReaderThread extends Thread {
         private final DemuxInputStream demuxInputStream;
         private final InputStream inputStream;
         private final StringBuffer stringBuffer = new StringBuffer();
@@ -62,7 +62,7 @@ public class DemuxInputStreamTest {
                     // System.out.println( "Reading: " + (char)ch );
                     stringBuffer.append((char) ch);
 
-                    final int sleepMillis = Math.abs(c_random.nextInt() % 10);
+                    final int sleepMillis = Math.abs(RANDOM.nextInt() % 10);
                     TestUtils.sleep(sleepMillis);
                     ch = demuxInputStream.read();
                 }
@@ -72,7 +72,7 @@ public class DemuxInputStreamTest {
         }
     }
 
-    private static class WriterThread extends Thread {
+    private static final class WriterThread extends Thread {
         private final byte[] byteArray;
         private final DemuxOutputStream demuxOutputStream;
         private final OutputStream outputStream;
@@ -91,7 +91,7 @@ public class DemuxInputStreamTest {
                 try {
                     // System.out.println( "Writing: " + (char)byteArray[ i ] );
                     demuxOutputStream.write(element);
-                    final int sleepMillis = Math.abs(c_random.nextInt() % 10);
+                    final int sleepMillis = Math.abs(RANDOM.nextInt() % 10);
                     TestUtils.sleep(sleepMillis);
                 } catch (final Exception e) {
                     e.printStackTrace();
@@ -100,7 +100,7 @@ public class DemuxInputStreamTest {
         }
     }
 
-    private static final Random c_random = new Random();
+    private static final Random RANDOM = new Random();
     private static final String DATA1 = "Data for thread1";
 
     private static final String DATA2 = "Data for thread2";
@@ -140,7 +140,7 @@ public class DemuxInputStreamTest {
     }
 
     private void startReader(final String name, final String data, final DemuxInputStream demux) {
-        final InputStream input = new StringInputStream(data);
+        final InputStream input = CharSequenceInputStream.builder().setCharSequence(data).get();
         final ReaderThread thread = new ReaderThread(name, input, demux);
         threadMap.put(name, thread);
     }

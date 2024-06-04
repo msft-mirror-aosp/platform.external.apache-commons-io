@@ -19,6 +19,7 @@ package org.apache.commons.io.comparator;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Comparator;
+import java.util.function.IntFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -36,6 +37,10 @@ import java.util.stream.StreamSupport;
  *       List&lt;File&gt; list = ...
  *       comparator.sort(list);
  * </pre>
+ * <h2>Deprecating Serialization</h2>
+ * <p>
+ * <em>Serialization is deprecated and will be removed in 3.0.</em>
+ * </p>
  *
  * @since 2.0
  */
@@ -44,6 +49,9 @@ public class CompositeFileComparator extends AbstractFileComparator implements S
     private static final Comparator<?>[] EMPTY_COMPARATOR_ARRAY = {};
     private static final long serialVersionUID = -2224170307287243428L;
 
+    /**
+     * Delegates.
+     */
     private final Comparator<File>[] delegates;
 
     /**
@@ -61,7 +69,8 @@ public class CompositeFileComparator extends AbstractFileComparator implements S
      * @param delegates The delegate file comparators
      */
     public CompositeFileComparator(final Iterable<Comparator<File>> delegates) {
-        this.delegates = delegates == null ? emptyArray() : StreamSupport.stream(delegates.spliterator(), false).toArray(Comparator[]::new);
+        this.delegates = delegates == null ? emptyArray()
+                : StreamSupport.stream(delegates.spliterator(), false).toArray((IntFunction<Comparator<File>[]>) Comparator[]::new);
     }
 
     /**

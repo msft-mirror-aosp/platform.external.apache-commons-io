@@ -36,7 +36,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 /**
- * Basic unit tests for the alternative ByteArrayOutputStream implementations.
+ * Tests the alternative ByteArrayOutputStream implementations.
  */
 public class ByteArrayOutputStreamTest {
 
@@ -46,7 +46,7 @@ public class ByteArrayOutputStreamTest {
         T newInstance(final int size);
     }
 
-    private static class ByteArrayOutputStreamFactory implements BAOSFactory<ByteArrayOutputStream> {
+    private static final class ByteArrayOutputStreamFactory implements BAOSFactory<ByteArrayOutputStream> {
         @Override
         public ByteArrayOutputStream newInstance() {
             return new ByteArrayOutputStream();
@@ -58,7 +58,7 @@ public class ByteArrayOutputStreamTest {
         }
     }
 
-    private static class UnsynchronizedByteArrayOutputStreamFactory implements BAOSFactory<UnsynchronizedByteArrayOutputStream> {
+    private static final class UnsynchronizedByteArrayOutputStreamFactory implements BAOSFactory<UnsynchronizedByteArrayOutputStream> {
         @Override
         public UnsynchronizedByteArrayOutputStream newInstance() {
             return new UnsynchronizedByteArrayOutputStream();
@@ -229,7 +229,7 @@ public class ByteArrayOutputStreamTest {
     @ParameterizedTest(name = "[{index}] {0}")
     @MethodSource("toBufferedInputStreamFunctionFactories")
     public void testToBufferedInputStream(final String baosName, final IOFunction<InputStream, InputStream> toBufferedInputStreamFunction) throws IOException {
-        final byte data[] = {(byte) 0xCA, (byte) 0xFE, (byte) 0xBA, (byte) 0xBE};
+        final byte[] data = {(byte) 0xCA, (byte) 0xFE, (byte) 0xBA, (byte) 0xBE};
 
         try (ByteArrayInputStream bain = new ByteArrayInputStream(data)) {
             assertEquals(data.length, bain.available());
@@ -271,13 +271,13 @@ public class ByteArrayOutputStreamTest {
 
             // Get data before more writes
             try (InputStream in = baout.toInputStream()) {
-                byte refData[] = ref.toByteArray();
+                byte[] refData = ref.toByteArray();
 
                 // Write some more data
                 writeData(baout, ref, new int[] {2, 4, 8, 16});
 
                 // Check original data
-                byte baoutData[] = IOUtils.toByteArray(in);
+                byte[] baoutData = IOUtils.toByteArray(in);
                 assertEquals(8224, baoutData.length);
                 checkByteArrays(refData, baoutData);
 
@@ -318,7 +318,7 @@ public class ByteArrayOutputStreamTest {
 
             // Get data before reset
             try (InputStream in = baout.toInputStream()) {
-                byte refData[] = ref.toByteArray();
+                byte[] refData = ref.toByteArray();
 
                 // Reset and write some new data
                 baout.reset();
@@ -326,7 +326,7 @@ public class ByteArrayOutputStreamTest {
                 writeData(baout, ref, new int[] {2, 4, 8, 16});
 
                 // Check original data
-                byte baoutData[] = IOUtils.toByteArray(in);
+                byte[] baoutData = IOUtils.toByteArray(in);
                 assertEquals(8224, baoutData.length);
                 checkByteArrays(refData, baoutData);
 
