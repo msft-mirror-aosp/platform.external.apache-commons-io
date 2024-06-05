@@ -102,7 +102,7 @@ public class DirectoryWalkerTestCaseJava4 {
      * Test DirectoryWalker implementation that always returns false
      * from handleDirectoryStart()
      */
-    private static class TestFalseFileFinder extends TestFileFinder {
+    private static final class TestFalseFileFinder extends TestFileFinder {
 
         protected TestFalseFileFinder(final FileFilter filter, final int depthLimit) {
             super(filter, depthLimit);
@@ -237,12 +237,12 @@ public class DirectoryWalkerTestCaseJava4 {
     private static final File outputDir = new File(ioDir, "output");
     private static final File[] dirs = {orgDir, apacheDir, commonsDir, ioDir, outputDir};
     // Files
-    private static final File filenameUtils = new File(ioDir, "FilenameUtils.java");
+    private static final File fileNameUtils = new File(ioDir, "FilenameUtils.java");
     private static final File ioUtils = new File(ioDir, "IOUtils.java");
 
     private static final File proxyWriter = new File(outputDir, "ProxyWriter.java");
     private static final File nullStream = new File(outputDir, "NullOutputStream.java");
-    private static final File[] ioFiles = {filenameUtils, ioUtils};
+    private static final File[] ioFiles = {fileNameUtils, ioUtils};
     private static final File[] outputFiles = {proxyWriter, nullStream};
     // Filters
     private static final IOFileFilter dirsFilter = createNameFilter(dirs);

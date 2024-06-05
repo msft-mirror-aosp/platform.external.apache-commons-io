@@ -1,5 +1,6 @@
 package org.apache.commons.io.input;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -39,19 +41,13 @@ import org.junit.jupiter.api.Test;
  */
 public class UnsynchronizedFilterInputStreamTest {
 
-    static class MyUnsynchronizedFilterInputStream extends UnsynchronizedFilterInputStream {
-        public MyUnsynchronizedFilterInputStream(final InputStream is) {
-            super(is);
-        }
-    }
+    public static final String DATA = StringUtils.repeat("This is a test.", 500);
 
     private Path fileName;
 
     private InputStream is;
 
     byte[] ibuf = new byte[4096];
-
-    public static final String DATA = StringUtils.repeat("This is a test.", 500);
 
     /**
      * Sets up the fixture, for example, open a network connection. This method is called before a test is executed.
@@ -62,8 +58,8 @@ public class UnsynchronizedFilterInputStreamTest {
     @BeforeEach
     protected void setUp() throws IOException {
         fileName = Files.createTempFile(getClass().getSimpleName(), ".tst");
-        Files.write(fileName, DATA.getBytes("UTF-8"));
-        is = new MyUnsynchronizedFilterInputStream(Files.newInputStream(fileName));
+        Files.write(fileName, DATA.getBytes(StandardCharsets.UTF_8));
+        is = UnsynchronizedFilterInputStream.builder().setInputStream(Files.newInputStream(fileName)).get();
     }
 
     /**
@@ -84,7 +80,7 @@ public class UnsynchronizedFilterInputStreamTest {
      */
     @Test
     public void test_available() throws IOException {
-        assertTrue(is.available() == DATA.length(), "Returned incorrect number of available bytes");
+        assertEquals(DATA.length(), is.available(), "Returned incorrect number of available bytes");
     }
 
     /**
@@ -122,7 +118,7 @@ public class UnsynchronizedFilterInputStreamTest {
     @Test
     public void test_read() throws IOException {
         final int c = is.read();
-        assertTrue(c == DATA.charAt(0), "read returned incorrect char");
+        assertEquals(DATA.charAt(0), c, "read returned incorrect char");
     }
 
     /**

@@ -24,6 +24,10 @@ import java.util.Objects;
 
 /**
  * This class turns a Java FileFilter or FilenameFilter into an IO FileFilter.
+ * <h2>Deprecating Serialization</h2>
+ * <p>
+ * <em>Serialization is deprecated and will be removed in 3.0.</em>
+ * </p>
  *
  * @since 1.0
  * @see FileFilterUtils#asFileFilter(FileFilter)
@@ -35,7 +39,7 @@ public class DelegateFileFilter extends AbstractFileFilter implements Serializab
     /** The File filter */
     private final FileFilter fileFilter;
     /** The Filename filter */
-    private final FilenameFilter filenameFilter;
+    private final FilenameFilter fileNameFilter;
 
     /**
      * Constructs a delegate file filter around an existing FileFilter.
@@ -45,17 +49,17 @@ public class DelegateFileFilter extends AbstractFileFilter implements Serializab
     public DelegateFileFilter(final FileFilter fileFilter) {
         Objects.requireNonNull(fileFilter, "filter");
         this.fileFilter = fileFilter;
-        this.filenameFilter = null;
+        this.fileNameFilter = null;
     }
 
     /**
      * Constructs a delegate file filter around an existing FilenameFilter.
      *
-     * @param filenameFilter  the filter to decorate
+     * @param fileNameFilter  the filter to decorate
      */
-    public DelegateFileFilter(final FilenameFilter filenameFilter) {
-        Objects.requireNonNull(filenameFilter, "filter");
-        this.filenameFilter = filenameFilter;
+    public DelegateFileFilter(final FilenameFilter fileNameFilter) {
+        Objects.requireNonNull(fileNameFilter, "filter");
+        this.fileNameFilter = fileNameFilter;
         this.fileFilter = null;
     }
 
@@ -82,8 +86,8 @@ public class DelegateFileFilter extends AbstractFileFilter implements Serializab
      */
     @Override
     public boolean accept(final File dir, final String name) {
-        if (filenameFilter != null) {
-            return filenameFilter.accept(dir, name);
+        if (fileNameFilter != null) {
+            return fileNameFilter.accept(dir, name);
         }
         return super.accept(dir, name);
     }
@@ -95,7 +99,7 @@ public class DelegateFileFilter extends AbstractFileFilter implements Serializab
      */
     @Override
     public String toString() {
-        final String delegate = fileFilter != null ? fileFilter.toString() : filenameFilter.toString();
+        final String delegate = fileFilter != null ? fileFilter.toString() : fileNameFilter.toString();
         return super.toString() + "(" + delegate + ")";
     }
 

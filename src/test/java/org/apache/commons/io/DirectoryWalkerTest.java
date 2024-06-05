@@ -35,10 +35,7 @@ import org.apache.commons.io.filefilter.NameFileFilter;
 import org.junit.jupiter.api.Test;
 
 /**
- * This is used to test DirectoryWalker for correctness.
- *
- * @see DirectoryWalker
- *
+ * Tests {@link DirectoryWalker}.
  */
 public class DirectoryWalkerTest {
 
@@ -50,7 +47,7 @@ public class DirectoryWalkerTest {
         private final String cancelFileName;
         private final boolean suppressCancel;
 
-        TestCancelWalker(final String cancelFileName,final boolean suppressCancel) {
+        TestCancelWalker(final String cancelFileName, final boolean suppressCancel) {
             this.cancelFileName = cancelFileName;
             this.suppressCancel = suppressCancel;
         }
@@ -93,7 +90,7 @@ public class DirectoryWalkerTest {
      * Test DirectoryWalker implementation that always returns false
      * from handleDirectoryStart()
      */
-    private static class TestFalseFileFinder extends TestFileFinder {
+    private static final class TestFalseFileFinder extends TestFileFinder {
 
         protected TestFalseFileFinder(final FileFilter filter, final int depthLimit) {
             super(filter, depthLimit);
@@ -146,7 +143,7 @@ public class DirectoryWalkerTest {
      * Test DirectoryWalker implementation that finds files in a directory hierarchy
      * applying a file filter.
      */
-    private static class TestFileFinderString extends DirectoryWalker<String> {
+    private static final class TestFileFinderString extends DirectoryWalker<String> {
 
         protected TestFileFinderString(final FileFilter filter, final int depthLimit) {
             super(filter, depthLimit);
@@ -237,12 +234,12 @@ public class DirectoryWalkerTest {
     private static final File outputDir    = new File(ioDir, "output");
     private static final File[] dirs       = {orgDir, apacheDir, commonsDir, ioDir, outputDir};
     // Files
-    private static final File filenameUtils = new File(ioDir, "FilenameUtils.java");
+    private static final File fileNameUtils = new File(ioDir, "FilenameUtils.java");
 
     private static final File ioUtils       = new File(ioDir, "IOUtils.java");
     private static final File proxyWriter   = new File(outputDir, "ProxyWriter.java");
     private static final File nullStream    = new File(outputDir, "NullOutputStream.java");
-    private static final File[] ioFiles     = {filenameUtils, ioUtils};
+    private static final File[] ioFiles     = {fileNameUtils, ioUtils};
     private static final File[] outputFiles = {proxyWriter, nullStream};
 
     // Filters

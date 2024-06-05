@@ -90,7 +90,7 @@ import java.util.stream.Stream;
  * currently running on.
  * </p>
  * <p>
- * Origin of code: Excalibur, Alexandria, Tomcat, Commons-Utils.
+ * Provenance: Excalibur, Alexandria, Tomcat, Commons-Utils.
  * </p>
  *
  * @since 1.1
@@ -846,7 +846,7 @@ public class FilenameUtils {
      * ~user               --&gt; 6           --&gt; named user (slash added)
      * //server/a/b/c.txt  --&gt; 9
      * ///a/b/c.txt        --&gt; -1          --&gt; error
-     * C:                  --&gt; 0           --&gt; valid filename as only null character and / are reserved characters
+     * C:                  --&gt; 0           --&gt; valid file name as only null character and / are reserved characters
      * </pre>
      * <p>
      * The output will be the same irrespective of the machine that the code is running on.

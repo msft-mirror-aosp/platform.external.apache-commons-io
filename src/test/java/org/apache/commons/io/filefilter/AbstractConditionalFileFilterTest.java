@@ -27,7 +27,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public abstract class ConditionalFileFilterAbstractTest extends IOFileFilterAbstractTest {
+public abstract class AbstractConditionalFileFilterTest extends AbstractIOFileFilterTest {
 
     private static final String TEST_FILE_NAME_PREFIX = "TestFile";
     private static final String TEST_FILE_TYPE = ".tst";
@@ -104,7 +104,7 @@ public abstract class ConditionalFileFilterAbstractTest extends IOFileFilterAbst
             final boolean[] trueResults = testTrueResults.get(i);
             final boolean[] falseResults = testFalseResults.get(i);
             final boolean fileResults = testFileResults.get(i);
-            final boolean filenameResults = testFilenameResults.get(i);
+            final boolean fileNameResults = testFilenameResults.get(i);
 
             // Test conditional AND filter created by passing filters to the constructor
             final IOFileFilter filter = this.buildFilterUsingAdd(filters);
@@ -116,10 +116,10 @@ public abstract class ConditionalFileFilterAbstractTest extends IOFileFilterAbst
             assertTrueFiltersInvoked(i, trueFilters, trueResults);
             assertFalseFiltersInvoked(i, falseFilters, falseResults);
 
-            // Test as a filename filter
+            // Test as a file name filter
             resetTrueFilters(this.trueFilters);
             resetFalseFilters(this.falseFilters);
-            assertFilenameFiltering(i, filter, this.file, filenameResults);
+            assertFilenameFiltering(i, filter, this.file, fileNameResults);
             assertTrueFiltersInvoked(i, trueFilters, trueResults);
             assertFalseFiltersInvoked(i, falseFilters, falseResults);
         }
@@ -138,7 +138,7 @@ public abstract class ConditionalFileFilterAbstractTest extends IOFileFilterAbst
             final boolean[] trueResults = testTrueResults.get(i);
             final boolean[] falseResults = testFalseResults.get(i);
             final boolean fileResults = testFileResults.get(i);
-            final boolean filenameResults = testFilenameResults.get(i);
+            final boolean fileNameResults = testFilenameResults.get(i);
 
             // Test conditional AND filter created by passing filters to the constructor
             final IOFileFilter filter = this.buildFilterUsingConstructor(filters);
@@ -150,10 +150,10 @@ public abstract class ConditionalFileFilterAbstractTest extends IOFileFilterAbst
             assertTrueFiltersInvoked(i, trueFilters, trueResults);
             assertFalseFiltersInvoked(i, falseFilters, falseResults);
 
-            // Test as a filename filter
+            // Test as a file name filter
             resetTrueFilters(this.trueFilters);
             resetFalseFilters(this.falseFilters);
-            assertFilenameFiltering(i, filter, this.file, filenameResults);
+            assertFilenameFiltering(i, filter, this.file, fileNameResults);
             assertTrueFiltersInvoked(i, trueFilters, trueResults);
             assertFalseFiltersInvoked(i, falseFilters, falseResults);
         }

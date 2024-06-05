@@ -19,20 +19,25 @@ package org.apache.commons.io.input;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import java.util.Set;
 
 import org.apache.commons.io.Charsets;
+import org.apache.commons.io.CharsetsTest;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class CharSequenceInputStreamTest {
 
@@ -76,11 +81,11 @@ public class CharSequenceInputStreamTest {
                 "Shift_JIS".equalsIgnoreCase(csName);
     }
 
-    @Test
-    public void testAvailable() throws Exception {
-        for (final String csName : Charset.availableCharsets().keySet()) {
-            // prevent java.lang.UnsupportedOperationException at sun.nio.cs.ext.ISO2022_CN.newEncoder.
-            // also try and avoid the following exception
+    @ParameterizedTest(name = "{0}")
+    @MethodSource(CharsetsTest.AVAIL_CHARSETS)
+    public void testAvailable(final String csName) throws Exception {
+        // prevent java.lang.UnsupportedOperationException at sun.nio.cs.ext.ISO2022_CN.newEncoder.
+        // also try and avoid the following exception
 //            java.lang.UnsupportedOperationException: null
 //            at java.nio.CharBuffer.array(CharBuffer.java:940)
 //            at sun.nio.cs.ext.COMPOUND_TEXT_Encoder.encodeLoop(COMPOUND_TEXT_Encoder.java:75)
@@ -90,14 +95,13 @@ public class CharSequenceInputStreamTest {
 //            at org.apache.commons.io.input.CharSequenceInputStreamTest.testAvailableRead(CharSequenceInputStreamTest.java:412)
 //            at org.apache.commons.io.input.CharSequenceInputStreamTest.testAvailable(CharSequenceInputStreamTest.java:424)
 
-            try {
-                if (isAvailabilityTestableForCharset(csName)) {
-                    testAvailableSkip(csName);
-                    testAvailableRead(csName);
-                }
-            } catch (final UnsupportedOperationException e){
-                fail("Operation not supported for " + csName);
+        try {
+            if (isAvailabilityTestableForCharset(csName)) {
+                testAvailableSkip(csName);
+                testAvailableRead(csName);
             }
+        } catch (final UnsupportedOperationException e) {
+            fail("Operation not supported for " + csName);
         }
     }
 
@@ -155,13 +159,12 @@ public class CharSequenceInputStreamTest {
 //        at sun.nio.cs.ext.COMPOUND_TEXT_Encoder.encodeLoop(COMPOUND_TEXT_Encoder.java:75)
 //        at java.nio.charset.CharsetEncoder.encode(CharsetEncoder.java:544)
 //        at org.apache.commons.io.input.CharSequenceInputStream.fillBuffer(CharSequenceInputStream.java:111)
-    @Test
-    public void testBufferedRead_AvailableCharset() throws IOException {
-        for (final String csName : Charset.availableCharsets().keySet()) {
-            // prevent java.lang.UnsupportedOperationException at sun.nio.cs.ext.ISO2022_CN.newEncoder.
-            if (isAvailabilityTestableForCharset(csName)) {
-                testBufferedRead(TEST_STRING, csName);
-            }
+    @ParameterizedTest(name = "{0}")
+    @MethodSource(CharsetsTest.AVAIL_CHARSETS)
+    public void testBufferedRead_AvailableCharset(final String csName) throws IOException {
+        // prevent java.lang.UnsupportedOperationException at sun.nio.cs.ext.ISO2022_CN.newEncoder.
+        if (isAvailabilityTestableForCharset(csName)) {
+            testBufferedRead(TEST_STRING, csName);
         }
     }
 
@@ -182,6 +185,9 @@ public class CharSequenceInputStreamTest {
         final char[] inputChars = { (char) 0xE0, (char) 0xB2, (char) 0xA0 };
         final Charset charset = Charset.forName(csName); // infinite loop for US-ASCII, UTF-8 OK
         try (InputStream stream = new CharSequenceInputStream(new String(inputChars), charset, 512)) {
+            IOUtils.toCharArray(stream, charset);
+        }
+        try (InputStream stream = CharSequenceInputStream.builder().setCharSequence(new String(inputChars)).setCharset(charset).setBufferSize(512).get()) {
             IOUtils.toCharArray(stream, charset);
         }
     }
@@ -338,7 +344,11 @@ public class CharSequenceInputStreamTest {
 
     @Test
     public void testMarkSupported() throws Exception {
-        try (InputStream r = new CharSequenceInputStream("test", UTF_8)) {
+        try (@SuppressWarnings("deprecation")
+        InputStream r = new CharSequenceInputStream("test", UTF_8)) {
+            assertTrue(r.markSupported());
+        }
+        try (InputStream r = CharSequenceInputStream.builder().setCharSequence("test").setCharset(UTF_8).get()) {
             assertTrue(r.markSupported());
         }
     }
@@ -349,11 +359,19 @@ public class CharSequenceInputStreamTest {
             IOUtils.toByteArray(in);
             assertEquals(Charset.defaultCharset(), in.getCharsetEncoder().charset());
         }
+        try (CharSequenceInputStream in = CharSequenceInputStream.builder().setCharSequence("test").setCharset((Charset) null).get()) {
+            IOUtils.toByteArray(in);
+            assertEquals(Charset.defaultCharset(), in.getCharsetEncoder().charset());
+        }
     }
 
     @Test
     public void testNullCharsetName() throws IOException {
         try (CharSequenceInputStream in = new CharSequenceInputStream("A", (String) null)) {
+            IOUtils.toByteArray(in);
+            assertEquals(Charset.defaultCharset(), in.getCharsetEncoder().charset());
+        }
+        try (CharSequenceInputStream in = CharSequenceInputStream.builder().setCharSequence("test").setCharset((String) null).get()) {
             IOUtils.toByteArray(in);
             assertEquals(Charset.defaultCharset(), in.getCharsetEncoder().charset());
         }
@@ -379,6 +397,48 @@ public class CharSequenceInputStreamTest {
         for (final String csName : getRequiredCharsetNames()) {
             testReadZero(csName);
         }
+    }
+
+    private void testResetBeforeEnd(final CharSequenceInputStream inputStream) throws IOException {
+        inputStream.mark(1);
+        assertEquals('1', inputStream.read());
+        inputStream.reset();
+        assertEquals('1', inputStream.read());
+        assertEquals('2', inputStream.read());
+        inputStream.reset();
+        assertEquals('1', inputStream.read());
+        assertEquals('2', inputStream.read());
+        assertEquals('3', inputStream.read());
+        inputStream.reset();
+        assertEquals('1', inputStream.read());
+        assertEquals('2', inputStream.read());
+        assertEquals('3', inputStream.read());
+        assertEquals('4', inputStream.read());
+        inputStream.reset();
+        assertEquals('1', inputStream.read());
+    }
+
+    @Test
+    @Disabled("[IO-795] CharSequenceInputStream.reset() only works once")
+    public void testResetBeforeEndSetCharSequence() throws IOException {
+        try (final CharSequenceInputStream inputStream = CharSequenceInputStream.builder().setCharSequence("1234").get()) {
+            testResetBeforeEnd(inputStream);
+        }
+    }
+
+    @Test
+    public void testResetCharset() {
+        assertNotNull(CharSequenceInputStream.builder().setReader(new StringReader("\uD800")).setCharset((Charset) null).getCharset());
+    }
+
+    @Test
+    public void testResetCharsetEncoder() {
+        assertNotNull(CharSequenceInputStream.builder().setReader(new StringReader("\uD800")).setCharsetEncoder(null).getCharsetEncoder());
+    }
+
+    @Test
+    public void testResetCharsetName() {
+        assertNotNull(CharSequenceInputStream.builder().setReader(new StringReader("\uD800")).setCharset((String) null).getCharset());
     }
 
     private void testSingleByteRead(final String testString, final String charsetName) throws IOException {
